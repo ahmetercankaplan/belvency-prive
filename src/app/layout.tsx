@@ -47,7 +47,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="az" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
+    <html lang="az" data-scroll-behavior="smooth" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
       {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla) inject attributes into <body> before React hydrates */}
       <body className="flex min-h-dvh flex-col" suppressHydrationWarning>
         <UIProvider>
