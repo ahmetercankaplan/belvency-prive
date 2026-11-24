@@ -6,7 +6,15 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Production driver: Netlify Blobs with optimistic concurrency (etag compare-and-set). */
 export class BlobStore implements Store {
   // STORE_NAME lets previews/tests use their own store so they never mix with real orders
-  private s = getStore({ name: process.env.STORE_NAME || "belvency", consistency: "strong" });
+  // During the Netlify *build* there is no Blobs context, so the catalog snapshot reads the store with an explicit
+  // site id + personal access token (BLOBS_TOKEN). Inside functions the context is automatic and these are unused.
+  private s = getStore({
+    name: process.env.STORE_NAME || "belvency",
+    consistency: "strong",
+    ...(!process.env.NETLIFY_BLOBS_CONTEXT && process.env.BLOBS_TOKEN && process.env.SITE_ID
+      ? { siteID: process.env.SITE_ID, token: process.env.BLOBS_TOKEN }
+      : {}),
+  });
 
   async get<T>(key: string): Promise<T | null> {
     return ((await this.s.get(key, { type: "json" })) as T | null) ?? null;
