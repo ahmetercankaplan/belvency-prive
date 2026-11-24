@@ -6,6 +6,8 @@ import { Price } from "@/components/ui/Price";
 import { getBrand } from "@/data/brands";
 import { getProduct } from "@/data/products";
 import { defaultOption, priceFor } from "@/lib/catalog";
+import { notFound } from "next/navigation";
+import { live } from "@/lib/flags";
 
 export const metadata: Metadata = {
   title: "Lookbook",
@@ -55,6 +57,7 @@ const scenes: Scene[] = [
 ];
 
 export default function LookbookPage() {
+  if (live) notFound();
   return (
     <div className="container-x pt-6">
       <Breadcrumbs items={[{ label: "Lookbook" }]} />

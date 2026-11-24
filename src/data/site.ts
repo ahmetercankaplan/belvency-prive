@@ -1,3 +1,5 @@
+import { seller } from "./legal.ts";
+
 export const site = {
   name: "BELVENCY",
   descriptor: "Privé",
@@ -9,9 +11,10 @@ export const site = {
   regionDeliveryFee: 8,
   giftWrapFee: 4,
   giftMessageMax: 160,
-  supportPhone: "+994 12 000 00 00",
-  supportEmail: "salam@belvency.example",
-  hours: "Hər gün 10:00 – 20:00",
+  // single source of truth: src/data/legal.ts
+  supportPhone: seller.phone,
+  supportEmail: seller.email,
+  hours: seller.hours,
 };
 
 export const mainNav = [

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Overlay } from "@/components/ui/Overlay";
-import { ProductArt } from "@/components/ui/ProductArt";
 import { getBrand } from "@/data/brands";
 import { getProductById } from "@/data/products";
 import { site } from "@/data/site";
@@ -11,6 +10,7 @@ import { priceFor } from "@/lib/catalog";
 import { formatAZN } from "@/lib/format";
 import { cartTotals, shop, useShop } from "@/lib/shop-store";
 import { useUI } from "@/lib/ui-store";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 export function CartLines({ compact = false }: { compact?: boolean }) {
   const { cart } = useShop();
@@ -31,7 +31,7 @@ export function CartLines({ compact = false }: { compact?: boolean }) {
               tabIndex={-1}
               aria-hidden="true"
             >
-              <ProductArt kind={p.kind} tone={p.tone} metal={p.metal} label="" className="aspect-[4/5] w-full" />
+              <ProductImage product={p} className="aspect-[4/5] w-full" />
             </Link>
             <div className="flex min-w-0 flex-1 flex-col">
               <p className="t-small text-muted">{getBrand(p.brandSlug)?.name}</p>

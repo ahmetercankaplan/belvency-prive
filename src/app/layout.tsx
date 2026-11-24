@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
-import { indexable, siteUrl } from "@/lib/flags";
+import { indexable, live, siteUrl } from "@/lib/flags";
 import { UIProvider } from "@/lib/ui-store";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
@@ -35,7 +35,8 @@ export const metadata: Metadata = {
     template: "%s · Belvency Privé",
   },
   description:
-    "Belvency Privé: ətir, zərgərlik, çanta, saat və aksesuarlardan ibarət seçilmiş lüks butik. Dizayn nümayişi — real satış aparılmır.",
+    "Belvency Privé: ətir, zərgərlik, çanta, saat və aksesuarlardan ibarət seçilmiş lüks butik." +
+    (live ? "" : " Dizayn nümayişi — real satış aparılmır."),
 };
 
 export const viewport: Viewport = {

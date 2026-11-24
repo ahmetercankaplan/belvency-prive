@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/snapshot-catalog.ts",
     "dev": "next dev",
+    "prebuild": "node scripts/snapshot-catalog.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

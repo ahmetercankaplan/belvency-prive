@@ -4,15 +4,22 @@ import { useEffect, useRef, useState } from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { Price } from "@/components/ui/Price";
 import { WishlistButton } from "./WishlistButton";
-import { defaultOption, priceFor } from "@/lib/catalog";
+import { priceFor } from "@/lib/catalog";
+import { unitsAvailable } from "@/lib/pricing";
 import { shop } from "@/lib/shop-store";
 import { useUI } from "@/lib/ui-store";
 import type { Product } from "@/lib/types";
+import { live } from "@/lib/flags";
 
 export function ProductPurchase({ product }: { product: Product }) {
   const { openPanel, notify } = useUI();
-  const [option, setOption] = useState<string | undefined>(defaultOption(product));
+  // start on the first variant that is actually in stock
+  const firstOption = product.option?.values.find((v) => unitsAvailable(product, v.name) > 0)?.name ?? product.option?.values[0]?.name;
+  const [option, setOption] = useState<string | undefined>(firstOption);
   const [qty, setQty] = useState(1);
+  const units = unitsAvailable(product, option);
+  const available = units > 0;
+  const maxQty = Math.min(10, Number.isFinite(units) ? units : 10);
   const pr = priceFor(product, option);
 
   const addRef = useRef<HTMLButtonElement>(null);
@@ -46,7 +53,8 @@ export function ProductPurchase({ product }: { product: Product }) {
   }, []);
 
   const add = () => {
-    shop.addToCart(product.id, option, qty);
+    if (!available) return;
+    shop.addToCart(product.id, option, Math.min(qty, maxQty));
     notify(qty > 1 ? `${qty} ədəd səbətə əlavə olundu` : "Səbətə əlavə olundu");
     openPanel("cart");
   };
@@ -63,14 +71,18 @@ export function ProductPurchase({ product }: { product: Product }) {
           <div className="mt-3 flex flex-wrap gap-2">
             {product.option.values.map((v) => {
               const active = v.name === option;
+              const out = unitsAvailable(product, v.name) <= 0;
               return (
-                <label key={v.name} className="cursor-pointer">
+                <label key={v.name} className={out ? "cursor-pointer opacity-60" : "cursor-pointer"}>
                   <input
                     type="radio"
                     name="option"
                     value={v.name}
                     checked={active}
-                    onChange={() => setOption(v.name)}
+                    onChange={() => {
+                      setOption(v.name);
+                      setQty(1);
+                    }}
                     className="peer sr-only"
                   />
                   <span
@@ -78,7 +90,7 @@ export function ProductPurchase({ product }: { product: Product }) {
                       active ? "border-garnet bg-garnet text-ivory" : "border-sand hover:border-cocoa"
                     }`}
                   >
-                    {v.name}
+                    <span className={out ? "line-through" : ""}>{v.name}</span>
                   </span>
                 </label>
               );
@@ -90,10 +102,12 @@ export function ProductPurchase({ product }: { product: Product }) {
       <p className="mt-6 flex items-center gap-2 text-sm" role="status">
         <span
           aria-hidden="true"
-          className={`h-2 w-2 rounded-full ${product.inStock ? "bg-[#5f8a63]" : "bg-[#a3392f]"}`}
+          className={`h-2 w-2 rounded-full ${available ? "bg-[#5f8a63]" : "bg-[#a3392f]"}`}
         />
-        {product.inStock ? "Stokda var" : "Hazırda stokda yoxdur"}
-        <span className="text-muted">· nümayiş məlumatı</span>
+        {!available
+          ? product.option ? "Bu seçim üçün stok yoxdur" : "Hazırda stokda yoxdur"
+          : Number.isFinite(units) && units <= 3 ? `Son ${units} ədəd` : "Stokda var"}
+        {!live && <span className="text-muted">· nümayiş məlumatı</span>}
       </p>
 
       <div className="mt-7 flex flex-wrap items-stretch gap-3">
@@ -113,14 +127,14 @@ export function ProductPurchase({ product }: { product: Product }) {
           <button
             type="button"
             aria-label="Sayı artır"
-            disabled={qty >= 10}
-            onClick={() => setQty((q) => Math.min(10, q + 1))}
+            disabled={qty >= maxQty}
+            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
             className="grid h-12 w-12 place-items-center rounded-full hover:bg-linen disabled:opacity-40"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <button ref={addRef} type="button" onClick={add} disabled={!product.inStock} className="btn btn-primary min-w-[14rem] flex-1">
+        <button ref={addRef} type="button" onClick={add} disabled={!available} className="btn btn-primary min-w-[14rem] flex-1">
           <ShoppingBag className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
           Səbətə at
         </button>
@@ -140,8 +154,8 @@ export function ProductPurchase({ product }: { product: Product }) {
               {option && <span className="truncate text-xs text-muted">{option}</span>}
             </div>
           </div>
-          <button type="button" onClick={add} disabled={!product.inStock} className="btn btn-primary shrink-0 px-5">
-            {product.inStock ? "Səbətə at" : "Stokda yoxdur"}
+          <button type="button" onClick={add} disabled={!available} className="btn btn-primary shrink-0 px-5">
+            {available ? "Səbətə at" : "Stokda yoxdur"}
           </button>
         </div>
       )}

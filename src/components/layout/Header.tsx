@@ -12,6 +12,7 @@ import { useUI } from "@/lib/ui-store";
 import { Logo } from "@/components/ui/Logo";
 import { ProductArt } from "@/components/ui/ProductArt";
 import type { Gender } from "@/lib/types";
+import { live } from "@/lib/flags";
 
 type MenuKey = "qadin" | "kisi";
 
@@ -60,14 +61,18 @@ function MegaMenu({ gender, onNavigate }: { gender: MenuKey; onNavigate: () => v
             <Link href={`/${gender}`} onClick={onNavigate} className="link-u mt-4 inline-block text-sm font-medium">
               Hamısına bax
             </Link>
-            <br />
-            <Link href="/etir-tapici" onClick={onNavigate} className="link-u mt-3 inline-block text-sm font-medium text-garnet-bright">
-              Ətir tapıcı
-            </Link>
-            <br />
-            <Link href="/lookbook" onClick={onNavigate} className="link-u mt-3 inline-block text-sm font-medium">
-              Lookbook
-            </Link>
+            {!live && (
+              <>
+                <br />
+                <Link href="/etir-tapici" onClick={onNavigate} className="link-u mt-3 inline-block text-sm font-medium text-garnet-bright">
+                  Ətir tapıcı
+                </Link>
+                <br />
+                <Link href="/lookbook" onClick={onNavigate} className="link-u mt-3 inline-block text-sm font-medium">
+                  Lookbook
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

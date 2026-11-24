@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Overlay } from "@/components/ui/Overlay";
 import { Price } from "@/components/ui/Price";
-import { ProductArt } from "@/components/ui/ProductArt";
 import { getBrand } from "@/data/brands";
 import { defaultOption, priceFor, searchProducts } from "@/lib/catalog";
 import { useUI } from "@/lib/ui-store";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 const SUGGESTIONS = ["ətir", "qolbaq", "çanta", "saat", "mirvari", "hədiyyə"];
 
@@ -83,7 +83,7 @@ function SearchBody({ onClose }: { onClose: () => void }) {
                   <li key={p.id}>
                     <Link href={`/mehsul/${p.slug}`} onClick={onClose} className="flex items-center gap-4 py-3 transition-colors hover:bg-linen/60">
                       <span className="block w-14 shrink-0 overflow-hidden">
-                        <ProductArt kind={p.kind} tone={p.tone} metal={p.metal} label="" className="aspect-[4/5] w-full" />
+                        <ProductImage product={p} className="aspect-[4/5] w-full" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="t-small block text-muted">{getBrand(p.brandSlug)?.name}</span>

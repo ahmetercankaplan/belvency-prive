@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shop/PageHeader";
 import { ProductArt } from "@/components/ui/ProductArt";
 import { brands } from "@/data/brands";
 import { products } from "@/data/products";
+import { live } from "@/lib/flags";
 
 export const metadata: Metadata = {
   title: "Brendlər",
@@ -16,7 +17,7 @@ export default function BrandsPage() {
       <PageHeader
         crumbs={[{ label: "Brendlər" }]}
         title="Seçilmiş brendlər"
-        intro="Bu səhifədəki brendlər dizayn nümayişi üçün uydurulub və real şirkətlərlə əlaqəsi yoxdur."
+        intro={live ? "Kolleksiyamızda təqdim olunan brendlər." : "Bu səhifədəki brendlər dizayn nümayişi üçün uydurulub və real şirkətlərlə əlaqəsi yoxdur."}
         art={{ kind: "bag", tone: "taupe" }}
       />
       <section className="container-x mt-14" aria-label="Brend siyahısı">

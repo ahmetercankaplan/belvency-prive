@@ -13,6 +13,8 @@ import { getProduct, products } from "@/data/products";
 import { site } from "@/data/site";
 import { relatedProducts } from "@/lib/catalog";
 import { formatAZN } from "@/lib/format";
+import { live } from "@/lib/flags";
+import { returns } from "@/data/legal";
 
 type Params = { slug: string };
 
@@ -138,10 +140,17 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
                 <ul className="list-disc space-y-1.5 pl-5">
                   <li>Bakı daxilində çatdırılma: {formatAZN(site.bakuDeliveryFee)}</li>
                   <li>Rayonlara çatdırılma: {formatAZN(site.regionDeliveryFee)}</li>
-                  <li>İstifadə olunmamış məhsulu 14 gün ərzində dəyişdirə bilərsiniz.</li>
-                  <li>Ətir və gözəllik məhsulları bağlı qablaşdırmada qaytarılır.</li>
+                  <li>İstifadə olunmamış məhsulu {returns.days} gün ərzində dəyişdirə bilərsiniz.</li>
+                  <li>Açılmış ətir və gözəllik məhsulları gigiyena səbəbindən qaytarılmır.</li>
                 </ul>
-                <p className="mt-3 text-xs">Bu şərtlər nümayiş məqsədlidir və real mağaza şərtləri deyil.</p>
+                {live ? (
+                  <p className="mt-3 text-xs">
+                    Ətraflı: <Link href="/catdirilma" className="underline underline-offset-4">çatdırılma</Link> və{" "}
+                    <Link href="/qaytarma" className="underline underline-offset-4">qaytarma</Link> şərtləri.
+                  </p>
+                ) : (
+                  <p className="mt-3 text-xs">Bu şərtlər nümayiş məqsədlidir və real mağaza şərtləri deyil.</p>
+                )}
               </Detail>
             </div>
           </div>

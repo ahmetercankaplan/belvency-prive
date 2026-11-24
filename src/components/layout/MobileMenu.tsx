@@ -10,6 +10,7 @@ import { groups } from "@/data/categories";
 import { categoriesFor } from "@/lib/catalog";
 import { site } from "@/data/site";
 import { useUI } from "@/lib/ui-store";
+import { live } from "@/lib/flags";
 
 function Section({ gender, label, onNavigate }: { gender: "qadin" | "kisi"; label: string; onNavigate: () => void }) {
   const [open, setOpen] = useState(false);
@@ -86,15 +87,19 @@ export function MobileMenu() {
         <Link href="/kataloq/hediyye-secimleri" onClick={closePanel} className={link}>
           Hədiyyə seçimləri
         </Link>
-        <Link href="/etir-tapici" onClick={closePanel} className={link}>
-          Ətir tapıcı
-        </Link>
+        {!live && (
+          <Link href="/etir-tapici" onClick={closePanel} className={link}>
+            Ətir tapıcı
+          </Link>
+        )}
         <Link href="/hediyye-sihirbazi" onClick={closePanel} className={link}>
           Hədiyyə sihirbazı
         </Link>
-        <Link href="/lookbook" onClick={closePanel} className={link}>
-          Lookbook
-        </Link>
+        {!live && (
+          <Link href="/lookbook" onClick={closePanel} className={link}>
+            Lookbook
+          </Link>
+        )}
         <Link href="/kataloq/xususi-teklifler" onClick={closePanel} className={link}>
           Xüsusi təkliflər
         </Link>

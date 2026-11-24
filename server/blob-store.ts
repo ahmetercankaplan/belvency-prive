@@ -5,7 +5,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Production driver: Netlify Blobs with optimistic concurrency (etag compare-and-set). */
 export class BlobStore implements Store {
-  private s = getStore({ name: "belvency", consistency: "strong" });
+  // STORE_NAME lets previews/tests use their own store so they never mix with real orders
+  private s = getStore({ name: process.env.STORE_NAME || "belvency", consistency: "strong" });
 
   async get<T>(key: string): Promise<T | null> {
     return ((await this.s.get(key, { type: "json" })) as T | null) ?? null;

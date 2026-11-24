@@ -1,10 +1,11 @@
 import type { Brand } from "@/lib/types";
+import { snapshot } from "@/lib/flags";
 
 /**
  * Bütün brendlər nümayiş üçün uydurulmuş adlardır.
  * Belvency Privé heç bir real brendlə rəsmi əməkdaşlıq iddiası etmir.
  */
-export const brands: Brand[] = [
+const demoBrands: Brand[] = [
   {
     slug: "maison-nergiz",
     name: "Maison Nərgiz",
@@ -78,5 +79,7 @@ export const brands: Brand[] = [
     kind: "wallet",
   },
 ];
+
+export const brands: Brand[] = snapshot.source === "live" ? (snapshot.brands ?? []) : demoBrands;
 
 export const getBrand = (slug: string) => brands.find((b) => b.slug === slug);

@@ -1,4 +1,5 @@
 import type { Product } from "@/lib/types";
+import { snapshot } from "@/lib/flags";
 
 /**
  * NÜMAYİŞ KATALOQU — bütün məhsullar, brendlər, qiymətlər və stok məlumatları
@@ -294,7 +295,7 @@ const seeds: Seed[] = [
   },
 ];
 
-export const products: Product[] = seeds.map((s, i) => ({
+const demoProducts: Product[] = seeds.map((s, i) => ({
   ...s,
   id: `p${String(i + 1).padStart(3, "0")}`,
   tags: s.tags ?? [],
@@ -304,6 +305,8 @@ export const products: Product[] = seeds.map((s, i) => ({
   added: ((i * 7) % seeds.length) + (s.tags?.includes("yeni") ? 100 : 0),
   specs: s.specs.map(([label, value]) => ({ label, value })),
 }));
+
+export const products: Product[] = snapshot.source === "live" ? (snapshot.products ?? []) : demoProducts;
 
 export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
 export const getProductById = (id: string) => products.find((p) => p.id === id);

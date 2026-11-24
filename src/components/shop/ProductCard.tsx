@@ -8,8 +8,8 @@ import { shop } from "@/lib/shop-store";
 import { useUI } from "@/lib/ui-store";
 import type { Product } from "@/lib/types";
 import { Price } from "@/components/ui/Price";
-import { ProductArt } from "@/components/ui/ProductArt";
 import { WishlistButton } from "./WishlistButton";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   void priority;
@@ -23,21 +23,18 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   return (
     <article className="group relative flex flex-col">
       <div className="relative aspect-[4/5] overflow-hidden bg-linen">
-        <ProductArt
-          kind={product.kind}
-          tone={product.tone}
-          metal={product.metal}
-          label=""
+        <ProductImage
+          product={product}
           className="absolute inset-0 h-full w-full transition-transform duration-[900ms] ease-[var(--ease-soft)] group-hover:scale-[1.04]"
         />
-        <ProductArt
-          kind={product.kind}
-          tone={product.tone}
-          metal={product.metal}
-          view={1}
-          label=""
-          className="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-700 ease-[var(--ease-soft)] group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none"
-        />
+        {(!product.images?.length || product.images.length > 1) && (
+          <ProductImage
+            product={product}
+            index={1}
+            view={1}
+            className="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-700 ease-[var(--ease-soft)] group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none"
+          />
+        )}
         {off && (
           <span className="absolute left-3 top-3 rounded-full bg-ivory/90 px-2.5 py-1 text-[0.75rem] font-semibold text-garnet-bright">
             −{off}%

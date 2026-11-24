@@ -10,6 +10,8 @@
   NODE_VERSION = "22"
   # Export the storefront as static files (see next.config.ts)
   STATIC_EXPORT = "1"
+  # Build the shop from the REAL catalog in the admin store; the build stops if it is empty
+  CATALOG_SOURCE = "live"
   # We deploy the static export ourselves; don't let Netlify auto-install its Next.js runtime plugin
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
   NEXT_TELEMETRY_DISABLED = "1"

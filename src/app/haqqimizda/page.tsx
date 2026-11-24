@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ProductArt } from "@/components/ui/ProductArt";
 import { site } from "@/data/site";
 import { formatAZN } from "@/lib/format";
+import { live } from "@/lib/flags";
 
 export const metadata: Metadata = {
   title: "Hekayəmiz",
@@ -67,6 +68,7 @@ export default function AboutPage() {
         </ul>
       </section>
 
+      {!live && (
       <section className="mt-24 bg-linen px-6 py-10 md:mt-32 md:px-12 md:py-14" aria-labelledby="demo">
         <h2 id="demo" className="t-h3">
           Bu sayt dizayn nümayişidir
@@ -85,6 +87,7 @@ export default function AboutPage() {
           </Link>
         </div>
       </section>
+      )}
     </div>
   );
 }

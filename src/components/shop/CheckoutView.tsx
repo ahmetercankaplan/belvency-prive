@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Check, Info } from "lucide-react";
-import { ProductArt } from "@/components/ui/ProductArt";
 import { GiftCardPreview } from "./GiftCardPreview";
 import { getProductById } from "@/data/products";
 import { regions, site } from "@/data/site";
 import { priceFor } from "@/lib/catalog";
+import { live } from "@/lib/flags";
 import { formatAZN, formatAzPhone, parseAzPhone } from "@/lib/format";
 import { cartTotals, giftFee, shop, useHydrated, useShop } from "@/lib/shop-store";
 import type { CartLine } from "@/lib/types";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 interface Values {
   name: string;
@@ -85,6 +86,8 @@ export function CheckoutView() {
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof Values, boolean>>>({});
   const [placed, setPlaced] = useState<Placed | null>(null);
+  const [sending, setSending] = useState(false);
+  const [serverError, setServerError] = useState("");
 
   const { subtotal, savings } = cartTotals(cart);
   const baseFee = values.region === "Bakı" ? site.bakuDeliveryFee : site.regionDeliveryFee;
@@ -109,7 +112,7 @@ export function CheckoutView() {
     onChange: set(k),
   });
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate(values);
     setErrors(errs);
@@ -120,11 +123,51 @@ export function CheckoutView() {
       return;
     }
     const national = parseAzPhone(values.phone)!;
+    let orderNumber = `DEMO-${Math.floor(100000 + Math.random() * 900000)}`; // demo only
+    let orderTotal = total;
+    if (live) {
+      if (sending) return;
+      setSending(true);
+      setServerError("");
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            lines: cart.map((l) => ({ id: l.id, option: l.option, qty: l.qty })),
+            customer: {
+              name: values.name.trim(),
+              surname: values.surname.trim(),
+              phone: values.phone,
+              email: values.email.trim(),
+              region: values.region,
+              address: values.address.trim(),
+              note: values.note.trim(),
+            },
+            gift: { wrap: gift.wrap, message: gift.message.trim() },
+            method: "cod",
+            website: (document.getElementById("website") as HTMLInputElement | null)?.value ?? "",
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { id?: string; total?: number; error?: string };
+        if (!res.ok || !data.id) {
+          setServerError(data.error || "Sifariş göndərilmədi. Bir az sonra yenidən cəhd edin və ya bizimlə əlaqə saxlayın.");
+          setSending(false);
+          return;
+        }
+        orderNumber = data.id;
+        orderTotal = data.total ?? total;
+      } catch {
+        setServerError("Bağlantı xətası. İnternetinizi yoxlayıb yenidən cəhd edin.");
+        setSending(false);
+        return;
+      }
+      setSending(false);
+    }
     setPlaced({
-      // demonstration reference only — not a real order number
-      number: `DEMO-${Math.floor(100000 + Math.random() * 900000)}`,
+      number: orderNumber,
       lines: cart,
-      total,
+      total: orderTotal,
       name: values.name.trim(),
       phone: formatAzPhone(national),
       wrapped: fee > 0,
@@ -143,12 +186,14 @@ export function CheckoutView() {
         <span className="grid h-12 w-12 place-items-center rounded-full bg-cocoa text-ivory">
           <Check className="h-5 w-5" aria-hidden="true" />
         </span>
-        <h2 className="t-h2 mt-6">Nümayiş sifarişi qeyd olundu</h2>
+        <h2 className="t-h2 mt-6">{live ? "Sifarişiniz qəbul olundu" : "Nümayiş sifarişi qeyd olundu"}</h2>
         <p className="mt-3 text-muted">
-          {placed.name}, bu dizayn nümayişidir — real sifariş yaradılmadı, ödəniş götürülmədi və sizinlə əlaqə saxlanılmayacaq.
+          {live
+            ? `${placed.name}, təşəkkür edirik! Sifarişinizi təsdiqləmək üçün tezliklə ${placed.phone} nömrəsinə zəng edəcəyik. Ödəniş çatdırılma zamanı nağd edilir.`
+            : `${placed.name}, bu dizayn nümayişidir — real sifariş yaradılmadı, ödəniş götürülmədi və sizinlə əlaqə saxlanılmayacaq.`}
         </p>
         <dl className="mt-6 grid max-w-sm grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[0.95rem]">
-          <dt className="text-muted">Nümayiş kodu</dt>
+          <dt className="text-muted">{live ? "Sifariş nömrəsi" : "Nümayiş kodu"}</dt>
           <dd className="font-medium">{placed.number}</dd>
           <dt className="text-muted">Telefon</dt>
           <dd>{placed.phone}</dd>
@@ -198,11 +243,18 @@ export function CheckoutView() {
   return (
     <div className="mt-8 grid items-start gap-12 lg:grid-cols-[1fr_26rem] xl:gap-20">
       <form onSubmit={submit} noValidate className="space-y-12">
-        <div className="flex gap-3 border border-sand bg-champagne/30 p-4 text-sm">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-gold-deep" aria-hidden="true" />
-          <p>
-            <strong className="font-medium">Nümayiş rejimi.</strong> Bu forma real sifariş yaratmır və kart ödənişi götürmür.
-          </p>
+        {!live && (
+          <div className="flex gap-3 border border-sand bg-champagne/30 p-4 text-sm">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-gold-deep" aria-hidden="true" />
+            <p>
+              <strong className="font-medium">Nümayiş rejimi.</strong> Bu forma real sifariş yaratmır və kart ödənişi götürmür.
+            </p>
+          </div>
+        )}
+        {/* honeypot: real visitors never see or fill this */}
+        <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+          <label htmlFor="website">Veb sayt</label>
+          <input id="website" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
         </div>
 
         <fieldset>
@@ -273,8 +325,30 @@ export function CheckoutView() {
           </div>
         </fieldset>
 
-        <button type="submit" className="btn btn-primary w-full sm:w-auto sm:min-w-72">
-          Nümayiş sifarişini göndər
+        {serverError && (
+          <p role="alert" className="border border-[#a3392f]/50 bg-[#fbeceb] px-4 py-3 text-sm text-[#7d2a22]">
+            {serverError}
+          </p>
+        )}
+        {live && (
+          <p className="text-[0.85rem] leading-relaxed text-muted">
+            Sifarişi təsdiqləməklə{" "}
+            <Link href="/sertler" className="underline underline-offset-4" target="_blank">
+              satış şərtləri
+            </Link>
+            ,{" "}
+            <Link href="/qaytarma" className="underline underline-offset-4" target="_blank">
+              qaytarma qaydaları
+            </Link>{" "}
+            ilə razılaşır və{" "}
+            <Link href="/mexfilik" className="underline underline-offset-4" target="_blank">
+              məxfilik siyasətinə
+            </Link>{" "}
+            uyğun olaraq məlumatlarınızın işlənməsinə razılıq verirsiniz.
+          </p>
+        )}
+        <button type="submit" disabled={sending} className="btn btn-primary w-full sm:w-auto sm:min-w-72 disabled:opacity-60">
+          {live ? (sending ? "Göndərilir…" : "Sifarişi təsdiqlə") : "Nümayiş sifarişini göndər"}
         </button>
       </form>
 
@@ -288,7 +362,7 @@ export function CheckoutView() {
             return (
               <li key={`${line.id}|${line.option ?? ""}`} className="flex gap-3 py-3">
                 <span className="block w-14 shrink-0 overflow-hidden">
-                  <ProductArt kind={p.kind} tone={p.tone} metal={p.metal} label="" className="aspect-[4/5] w-full" />
+                  <ProductImage product={p} className="aspect-[4/5] w-full" />
                 </span>
                 <span className="min-w-0 flex-1 text-sm">
                   <span className="block font-medium leading-snug">{p.title}</span>

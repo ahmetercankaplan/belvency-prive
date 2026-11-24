@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { site } from "@/data/site";
+import { live } from "@/lib/flags";
 
 const cols = [
   {
@@ -11,9 +12,8 @@ const cols = [
       { href: "/brendler", label: "Brendlər" },
       { href: "/kataloq/yeni-gelenler", label: "Yeni gələnlər" },
       { href: "/kataloq/hediyye-secimleri", label: "Hədiyyə seçimləri" },
-      { href: "/etir-tapici", label: "Ətir tapıcı" },
       { href: "/hediyye-sihirbazi", label: "Hədiyyə sihirbazı" },
-      { href: "/lookbook", label: "Lookbook" },
+      ...(live ? [] : [{ href: "/etir-tapici", label: "Ətir tapıcı" }, { href: "/lookbook", label: "Lookbook" }]),
     ],
   },
   {
@@ -24,6 +24,16 @@ const cols = [
       { href: "/kataloq/cantalar", label: "Çantalar" },
       { href: "/kataloq/saatlar", label: "Saatlar" },
       { href: "/kataloq/ekskluziv-kolleksiya", label: "Eksklüziv kolleksiya" },
+    ],
+  },
+  {
+    title: "Məlumat",
+    links: [
+      { href: "/catdirilma", label: "Çatdırılma və ödəniş" },
+      { href: "/qaytarma", label: "Qaytarma və dəyişdirmə" },
+      { href: "/sertler", label: "Satış şərtləri" },
+      { href: "/mexfilik", label: "Məxfilik siyasəti" },
+      { href: "/elaqe", label: "Əlaqə" },
     ],
   },
   {
@@ -47,20 +57,24 @@ export function Footer() {
             {site.tagline}.
           </p>
           <address className="mt-8 space-y-1 text-[0.9rem] not-italic text-ivory/80">
-            <p>
-              <a href={`tel:${site.supportPhone.replace(/\s/g, "")}`} className="hover:text-champagne">
-                {site.supportPhone}
-              </a>
-            </p>
-            <p>
-              <a href={`mailto:${site.supportEmail}`} className="hover:text-champagne">
-                {site.supportEmail}
-              </a>
-            </p>
+            {site.supportPhone && (
+              <p>
+                <a href={`tel:${site.supportPhone.replace(/\s/g, "")}`} className="hover:text-champagne">
+                  {site.supportPhone}
+                </a>
+              </p>
+            )}
+            {site.supportEmail && (
+              <p>
+                <a href={`mailto:${site.supportEmail}`} className="hover:text-champagne">
+                  {site.supportEmail}
+                </a>
+              </p>
+            )}
             <p>{site.hours}</p>
           </address>
         </div>
-        <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:col-span-8 md:pl-10">
+        <div className="grid grid-cols-2 gap-10 sm:grid-cols-4 md:col-span-8 md:pl-10">
           {cols.map((c) => (
             <nav key={c.title} aria-label={c.title}>
               <p className="font-display text-xl text-champagne">{c.title}</p>
@@ -81,7 +95,7 @@ export function Footer() {
         <div className="container-x flex flex-col gap-3 py-6 text-[0.8rem] text-ivory/65 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} Belvency Privé. Bütün hüquqlar qorunur.</p>
           <p className="max-w-[60ch] md:text-right">
-            Bu sayt dizayn nümayişidir: məhsullar, brendlər və qiymətlər uydurmadır, real ödəniş və ya sifariş qəbul edilmir.
+            {!live && "Bu sayt dizayn nümayişidir: məhsullar, brendlər və qiymətlər uydurmadır, real ödəniş və ya sifariş qəbul edilmir. "}
             Ana səhifədəki fotoqrafiyalar{" "}
             <a href="https://unsplash.com/license" className="underline underline-offset-4 hover:text-ivory" rel="noopener noreferrer">
               Unsplash lisenziyası

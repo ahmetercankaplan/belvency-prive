@@ -51,3 +51,6 @@ next-env.d.ts
 
 # editor / assistant tooling
 .claude/
+
+# generated before dev/build by scripts/snapshot-catalog.ts
+/src/data/catalog.snapshot.json

@@ -15,6 +15,7 @@ import {
   ServiceStrip,
 } from "@/components/home/Sections";
 import { productsByTag } from "@/lib/catalog";
+import { live } from "@/lib/flags";
 
 export default function HomePage() {
   const best = productsByTag("cox-satilanlar");
@@ -32,9 +33,11 @@ export default function HomePage() {
       <div className={gap}>
         <PerfumeEditorial />
       </div>
-      <div className={gap}>
-        <BestSellers products={best} />
-      </div>
+      {(!live || best.length > 0) && (
+        <div className={gap}>
+          <BestSellers products={best} />
+        </div>
+      )}
       <div className={gap}>
         <JewelryEditorial />
       </div>
@@ -47,9 +50,11 @@ export default function HomePage() {
       <div className={gap}>
         <MenSection />
       </div>
-      <div className={gap}>
-        <ScentTeaser />
-      </div>
+      {!live && (
+        <div className={gap}>
+          <ScentTeaser />
+        </div>
+      )}
       <div className={gap}>
         <BrandsStrip />
       </div>
@@ -59,9 +64,11 @@ export default function HomePage() {
       <div className={gap}>
         <ServiceStrip />
       </div>
-      <div className={gap}>
-        <Newsletter />
-      </div>
+      {!live && (
+        <div className={gap}>
+          <Newsletter />
+        </div>
+      )}
     </div>
   );
 }

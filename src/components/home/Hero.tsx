@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { getProduct } from "@/data/products";
+import { getProduct, products } from "@/data/products";
+import { live } from "@/lib/flags";
 import { defaultOption, priceFor } from "@/lib/catalog";
 import { HeroArches } from "./HeroArches";
 
 const lines = ["Zövqlə", "seçilmiş", "lüks"];
 
 export function Hero() {
-  const p = getProduct("ay-isigi-qolbaq");
+  const p = live ? [...products].sort((a, b) => b.added - a.added)[0] : getProduct("ay-isigi-qolbaq");
   const featured = p
     ? { href: `/mehsul/${p.slug}`, title: p.title, price: priceFor(p, defaultOption(p)).current }
     : { href: "/kataloq", title: "Yeni kolleksiya", price: 0 };

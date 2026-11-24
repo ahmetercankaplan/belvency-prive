@@ -12,15 +12,21 @@ import { getProduct, products } from "@/data/products";
 import { site } from "@/data/site";
 import { defaultOption, priceFor, productsByTag } from "@/lib/catalog";
 import { formatAZN } from "@/lib/format";
+import { live } from "@/lib/flags";
 import type { Product } from "@/lib/types";
 
 const byAdded = (a: Product, b: Product) => b.added - a.added;
-const pick = (slugs: string[]) => slugs.map(getProduct).filter((p): p is Product => !!p);
+/** Demo: hand-picked slugs. Real shop: the same slot is filled from the real catalog (newest first). */
+const pick = (slugs: string[], fallback: (p: Product) => boolean, n = slugs.length) =>
+  live ? products.filter(fallback).sort(byAdded).slice(0, n) : slugs.map(getProduct).filter((p): p is Product => !!p);
+const inGroup = (group: string) => (p: Product) => categories.find((c) => c.slug === p.category)?.group === group;
 
 /* ───────────── Categories: staggered arch tiles ───────────── */
 export function CategoryArches() {
   const slugs = ["etirler", "makiyaj", "qulluq", "bilezikler", "uzukler", "cantalar", "saatlar", "ayaqqabilar"];
-  const list = slugs.map((s) => categories.find((c) => c.slug === s)!);
+  const have = new Set(products.map((p) => p.category));
+  const list = (live ? categories.filter((c) => have.has(c.slug)).slice(0, 8) : slugs.map((s) => categories.find((c) => c.slug === s)!));
+  if (list.length === 0) return null;
   return (
     <section className="container-x" aria-labelledby="cats">
       <div className="flex items-end justify-between gap-6">
@@ -56,6 +62,7 @@ export function CategoryArches() {
 /* ───────────── New arrivals ───────────── */
 export function NewArrivals() {
   const list = productsByTag("yeni").sort(byAdded).slice(0, 4);
+  if (list.length === 0) return null;
   return (
     <section className="container-x" aria-labelledby="new">
       <div className="flex items-end justify-between gap-6">
@@ -75,7 +82,8 @@ export function NewArrivals() {
 
 /* ───────────── Perfume editorial ───────────── */
 export function PerfumeEditorial() {
-  const list = pick(["nergiz-gecesi-etir-suyu", "enber-gun-batimi-etir-suyu", "lale-seheri-etir-suyu"]);
+  const list = pick(["nergiz-gecesi-etir-suyu", "enber-gun-batimi-etir-suyu", "lale-seheri-etir-suyu"], (p) => p.category === "etirler", 3);
+  if (list.length === 0) return null;
   return (
     <section className="relative overflow-hidden bg-blush" aria-labelledby="perfume">
       <span
@@ -130,7 +138,8 @@ export function PerfumeEditorial() {
 
 /* ───────────── Jewelry editorial (dark band) ───────────── */
 export function JewelryEditorial() {
-  const list = pick(["ay-isigi-qolbaq", "damla-mirvari-boyunbagi", "solitaire-uzuk"]);
+  const list = pick(["ay-isigi-qolbaq", "damla-mirvari-boyunbagi", "solitaire-uzuk"], inGroup("zerger"), 3);
+  if (list.length === 0) return null;
   return (
     <section className="on-dark bg-garnet-deep text-ivory" aria-labelledby="jewel">
       <div className="container-x py-14 md:py-24">
@@ -146,9 +155,11 @@ export function JewelryEditorial() {
               <Link href="/kataloq/zerger" className="btn btn-light">
                 Zərgərliyə bax
               </Link>
-              <Link href="/lookbook" className="link-u text-sm text-champagne">
-                Görünüşü tamamla
-              </Link>
+              {!live && (
+                <Link href="/lookbook" className="link-u text-sm text-champagne">
+                  Görünüşü tamamla
+                </Link>
+              )}
             </div>
           </div>
           <Reveal className="lg:col-span-7">
@@ -202,7 +213,8 @@ export function JewelryEditorial() {
 /* ───────────── Beauty: typographic index + products ───────────── */
 export function BeautyEditorial() {
   const cats = categoriesOfGroup("gozellik");
-  const list = pick(["mexmer-dodaq-boyasi", "isiltili-kolge-paleti", "hialuron-nem-serumu", "uc-addim-qulluq-seti"]);
+  const list = pick(["mexmer-dodaq-boyasi", "isiltili-kolge-paleti", "hialuron-nem-serumu", "uc-addim-qulluq-seti"], inGroup("gozellik"), 4);
+  if (list.length === 0) return null;
   return (
     <section className="container-x" aria-labelledby="beauty">
       <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
@@ -244,7 +256,8 @@ export function BeautyEditorial() {
 
 /* ───────────── Handbags ───────────── */
 export function Handbags() {
-  const list = pick(["arxa-ciyin-cantasi", "mektub-cantasi", "mini-carpaz-canta"]);
+  const list = pick(["arxa-ciyin-cantasi", "mektub-cantasi", "mini-carpaz-canta"], (p) => p.category === "cantalar", 3);
+  if (list.length === 0) return null;
   return (
     <section className="container-x" aria-labelledby="bags">
       <div className="flex flex-wrap items-end justify-between gap-6">
@@ -271,7 +284,8 @@ export function Handbags() {
 
 /* ───────────── Men ───────────── */
 export function MenSection() {
-  const list = pick(["xronoqraf-kisi-saati", "deri-pul-kisesi", "qara-enber-etir-suyu", "ipek-qalstuk"]);
+  const list = pick(["xronoqraf-kisi-saati", "deri-pul-kisesi", "qara-enber-etir-suyu", "ipek-qalstuk"], (p) => p.gender === "kisi", 4);
+  if (list.length === 0) return null;
   return (
     <section className="bg-linen" aria-labelledby="men">
       <div className="container-x grid items-center gap-12 py-14 md:py-20 lg:grid-cols-12 lg:gap-14">
@@ -298,13 +312,14 @@ export function MenSection() {
 
 /* ───────────── Brands: wordmark list ───────────── */
 export function BrandsStrip() {
+  if (brands.length === 0) return null;
   return (
     <section className="container-x" aria-labelledby="brands">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2 id="brands" className="t-h2">
           Seçilmiş brendlər
         </h2>
-        <p className="t-small text-muted">Nümayiş üçün uydurulmuş brendlər</p>
+        {!live && <p className="t-small text-muted">Nümayiş üçün uydurulmuş brendlər</p>}
       </div>
       <ul className="mt-9 flex flex-wrap gap-x-10 gap-y-4 border-y border-line py-8 md:gap-x-14">
         {brands.map((b) => (

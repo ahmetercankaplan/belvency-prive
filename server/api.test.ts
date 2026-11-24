@@ -307,7 +307,7 @@ describe("order management", () => {
     let hit = "";
     const hooked = { ...env, BUILD_HOOK_URL: "https://hooks.test/abc" };
     const res = await handle(new Request(`${ORIGIN}/api/admin/publish`, { method: "POST", headers: { origin: ORIGIN, cookie, "content-type": "application/json" }, body: "{}" }), {
-      store, env: hooked, fetch: (async (u: string | URL | Request) => { hit = String(u); return new Response("ok"); }) as typeof fetch,
+      store, env: hooked, now: () => new Date("2026-11-20T10:00:00Z"), fetch: (async (u: string | URL | Request) => { hit = String(u); return new Response("ok"); }) as typeof fetch,
     });
     assert.equal(res.status, 200);
     assert.equal(hit, "https://hooks.test/abc");

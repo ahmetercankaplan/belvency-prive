@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ProductArt } from "@/components/ui/ProductArt";
+import { ProductImage } from "@/components/ui/ProductImage";
+import { live } from "@/lib/flags";
 import type { Product } from "@/lib/types";
 
 const VIEWS = [
@@ -12,6 +13,9 @@ const VIEWS = [
 ];
 
 export function ProductGallery({ product }: { product: Product }) {
+  const photos = product.images ?? [];
+  const real = photos.length > 0;
+  const views = real ? photos.map((_, k) => ({ view: (k % 4) as 0 | 1 | 2 | 3, name: `Şəkil ${k + 1}` })) : VIEWS;
   const [i, setI] = useState(0);
   const frame = useRef<HTMLDivElement>(null);
 
@@ -22,7 +26,7 @@ export function ProductGallery({ product }: { product: Product }) {
     el.style.setProperty("--zx", `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`);
     el.style.setProperty("--zy", `${(((e.clientY - r.top) / r.height) * 100).toFixed(1)}%`);
   };
-  const current = VIEWS[i];
+  const current = views[i];
 
   return (
     <div className="grid gap-3 md:grid-cols-[4.5rem_auto] md:justify-start md:gap-4">
@@ -31,9 +35,9 @@ export function ProductGallery({ product }: { product: Product }) {
         role="group"
         aria-label="Məhsul görüntüləri"
       >
-        {VIEWS.map((v, idx) => (
+        {views.map((v, idx) => (
           <button
-            key={v.view}
+            key={`${v.name}`}
             type="button"
             onClick={() => setI(idx)}
             aria-label={v.name}
@@ -42,7 +46,7 @@ export function ProductGallery({ product }: { product: Product }) {
               idx === i ? "border-cocoa" : "border-transparent opacity-70 hover:opacity-100"
             }`}
           >
-            <ProductArt kind={product.kind} tone={product.tone} metal={product.metal} view={v.view} label="" className="aspect-[4/5] w-full" />
+            <ProductImage product={product} index={idx} view={v.view} className="aspect-[4/5] w-full" />
           </button>
         ))}
       </div>
@@ -54,19 +58,21 @@ export function ProductGallery({ product }: { product: Product }) {
           className="h-full w-full transition-transform duration-300 ease-out [@media(hover:hover)]:group-hover:scale-[1.9]"
           style={{ transformOrigin: "var(--zx, 50%) var(--zy, 50%)" }}
         >
-          <ProductArt
-            key={current.view}
-            kind={product.kind}
-            tone={product.tone}
-            metal={product.metal}
+          <ProductImage
+            key={`${current.name}-${i}`}
+            product={product}
+            index={i}
             view={current.view}
+            eager
             label={`${product.title} — ${current.name}`}
             className="anim-fade aspect-[4/5] w-full md:aspect-auto md:h-full"
           />
         </div>
-        <p className="t-small absolute bottom-3 left-4 rounded-full bg-ivory/85 px-3 py-1 text-muted backdrop-blur">
-          Nümayiş təsviri
-        </p>
+        {!live && !real && (
+          <p className="t-small absolute bottom-3 left-4 rounded-full bg-ivory/85 px-3 py-1 text-muted backdrop-blur">
+            Nümayiş təsviri
+          </p>
+        )}
       </div>
     </div>
   );
