@@ -3,19 +3,17 @@
 import { useRef, useState } from "react";
 import { ProductImage } from "@/components/ui/ProductImage";
 import { live } from "@/lib/flags";
+import { fmt } from "@/i18n/config";
+import { useT } from "@/i18n/provider";
 import type { Product } from "@/lib/types";
 
-const VIEWS = [
-  { view: 0 as const, name: "Studiya görünüşü" },
-  { view: 1 as const, name: "İsti fon" },
-  { view: 2 as const, name: "Yaxın plan" },
-  { view: 3 as const, name: "Işıq altında" },
-];
+const VIEWS = [0, 1, 2, 3] as const;
 
 export function ProductGallery({ product }: { product: Product }) {
+  const t = useT().shop.gallery;
   const photos = product.images ?? [];
   const real = photos.length > 0;
-  const views = real ? photos.map((_, k) => ({ view: (k % 4) as 0 | 1 | 2 | 3, name: `Şəkil ${k + 1}` })) : VIEWS;
+  const views = real ? photos.map((_, k) => ({ view: (k % 4) as 0 | 1 | 2 | 3, name: fmt(t.image, { n: k + 1 }) })) : VIEWS.map((view) => ({ view, name: t.views[view] }));
   const [i, setI] = useState(0);
   const frame = useRef<HTMLDivElement>(null);
 
@@ -33,7 +31,7 @@ export function ProductGallery({ product }: { product: Product }) {
       <div
         className="order-2 flex gap-2.5 overflow-x-auto md:order-1 md:flex-col md:overflow-visible rail"
         role="group"
-        aria-label="Məhsul görüntüləri"
+        aria-label={t.group}
       >
         {views.map((v, idx) => (
           <button
@@ -70,7 +68,7 @@ export function ProductGallery({ product }: { product: Product }) {
         </div>
         {!live && !real && (
           <p className="t-small absolute bottom-3 left-4 rounded-full bg-ivory/85 px-3 py-1 text-muted backdrop-blur">
-            Nümayiş təsviri
+            {t.demo}
           </p>
         )}
       </div>

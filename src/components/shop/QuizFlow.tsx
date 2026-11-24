@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { fmt } from "@/i18n/config";
+import { useT } from "@/i18n/provider";
 
 export interface QuizOption {
   value: string;
@@ -33,6 +35,7 @@ export function QuizFlow({
   renderResults: (ctx: QuizContext) => ReactNode;
   progressLabel: string;
 }) {
+  const t = useT().gift.quiz;
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const headingRef = useRef<HTMLHeadingElement>(null);
   const mounted = useRef(false);
@@ -67,7 +70,7 @@ export function QuizFlow({
     <div>
       <div className="flex items-center gap-4">
         <p className="text-sm text-muted" aria-live="polite">
-          Sual {step + 1} / {questions.length}
+          {fmt(t.step, { n: step + 1, total: questions.length })}
         </p>
         <div
           className="h-1 flex-1 overflow-hidden rounded-full bg-line"
@@ -105,7 +108,7 @@ export function QuizFlow({
 
       {step > 0 && (
         <button type="button" onClick={back} className="link-u mt-8 text-sm text-muted hover:text-cocoa">
-          Geri qayıt
+          {t.back}
         </button>
       )}
     </div>

@@ -14,24 +14,15 @@ export const site = {
   // single source of truth: src/data/legal.ts
   supportPhone: seller.phone,
   supportEmail: seller.email,
-  hours: seller.hours,
 };
 
 export const mainNav = [
-  { href: "/qadin", label: "Qadın", menu: "qadin" as const },
-  { href: "/kisi", label: "Kişi", menu: "kisi" as const },
-  { href: "/brendler", label: "Brendlər" },
-  { href: "/kataloq/hediyye-secimleri", label: "Hədiyyə" },
-  { href: "/kataloq/xususi-teklifler", label: "Təkliflər" },
-];
+  { href: "/qadin", key: "women" as const, menu: "qadin" as const },
+  { href: "/kisi", key: "men" as const, menu: "kisi" as const },
+  { href: "/brendler", key: "brands" as const },
+  { href: "/kataloq/hediyye-secimleri", key: "gift" as const },
+  { href: "/kataloq/xususi-teklifler", key: "offers" as const },
+] as { href: string; key: "women" | "men" | "brands" | "gift" | "offers"; menu?: "qadin" | "kisi" }[];
 
-export const regions = [
-  "Bakı",
-  "Sumqayıt",
-  "Gəncə",
-  "Mingəçevir",
-  "Şəki",
-  "Lənkəran",
-  "Quba",
-  "Digər rayon",
-];
+/** Region ids stay Azerbaijani (the server prices delivery by them); the label comes from i18n catalog.regions. */
+export const regions = ["Bakı", "Sumqayıt", "Gəncə", "Mingəçevir", "Şəki", "Lənkəran", "Quba", "Digər rayon"];

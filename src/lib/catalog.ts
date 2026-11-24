@@ -2,7 +2,7 @@ import { brands, getBrand } from "@/data/brands";
 import { categories, genderLabels, getCategory } from "@/data/categories";
 import { products } from "@/data/products";
 import { fold } from "@/lib/format";
-import type { Gender, Product, Tag } from "@/lib/types";
+import type { Category, Gender, Product, Tag } from "@/lib/types";
 
 export type SortKey = "tovsiye" | "yeni" | "ucuz" | "bahali";
 
@@ -78,7 +78,7 @@ export const priceCeiling = Math.ceil(Math.max(...products.map((p) => p.price)) 
 export { brands, categories };
 
 /** Categories that actually contain products for the given gender (drives menus). */
-export function categoriesFor(gender: Gender) {
+export function categoriesFor(gender: Gender, list: Category[] = categories) {
   const slugs = new Set(products.filter((p) => matchesGender(p, gender)).map((p) => p.category));
-  return categories.filter((c) => slugs.has(c.slug));
+  return list.filter((c) => slugs.has(c.slug));
 }

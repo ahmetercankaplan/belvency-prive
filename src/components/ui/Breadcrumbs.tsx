@@ -1,5 +1,8 @@
-import Link from "next/link";
+"use client";
+
+import Link from "@/i18n/link";
 import { ChevronRight } from "lucide-react";
+import { useT } from "@/i18n/provider";
 
 export interface Crumb {
   label: string;
@@ -7,9 +10,10 @@ export interface Crumb {
 }
 
 export function Breadcrumbs({ items, className = "" }: { items: Crumb[]; className?: string }) {
-  const all: Crumb[] = [{ label: "Ana səhifə", href: "/" }, ...items];
+  const t = useT().chrome.breadcrumbs;
+  const all: Crumb[] = [{ label: t.home, href: "/" }, ...items];
   return (
-    <nav aria-label="Naviqasiya yolu" className={`t-small text-muted ${className}`}>
+    <nav aria-label={t.label} className={`t-small text-muted ${className}`}>
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         {all.map((c, i) => {
           const last = i === all.length - 1;

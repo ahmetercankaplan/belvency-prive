@@ -10,7 +10,8 @@
 import { copyFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 
-const OUT = path.resolve(process.cwd(), "out");
+// NEXT_DIST_DIR moves the export output (used for local test builds)
+const OUT = path.resolve(process.cwd(), process.env.NEXT_DIST_DIR || "out");
 
 async function exists(p) {
   try {

@@ -1,20 +1,19 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { Suspense, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X } from "lucide-react";
 import { Overlay } from "@/components/ui/Overlay";
-import { getBrand } from "@/data/brands";
-import { getCategory } from "@/data/categories";
+import { useCatalog } from "@/i18n/use-catalog";
+import { fmt } from "@/i18n/config";
+import { useLocale, useT } from "@/i18n/provider";
 import {
   defaultOption,
   isSale,
   matchesGender,
   priceCeiling,
   priceFor,
-  searchProducts,
-  sortLabels,
   sortProducts,
   type SortKey,
 } from "@/lib/catalog";
@@ -36,11 +35,8 @@ interface Props {
   emptyHint?: string;
 }
 
-const GENDER_OPTIONS: { value: Gender | ""; label: string }[] = [
-  { value: "", label: "Hamısı" },
-  { value: "qadin", label: "Qadın" },
-  { value: "kisi", label: "Kişi" },
-];
+const GENDER_VALUES: (Gender | "")[] = ["", "qadin", "kisi"];
+const SORT_KEYS: SortKey[] = ["tovsiye", "yeni", "ucuz", "bahali"];
 
 const Check = ({ checked, onChange, label, count }: { checked: boolean; onChange: () => void; label: string; count?: number }) => (
   <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[0.95rem]">
@@ -107,6 +103,10 @@ function CatalogInner({
   const pathname = usePathname();
   const sp = useSearchParams();
 
+  const t = useT().shop.catalog;
+  const t2 = useT().catalog;
+  const locale = useLocale();
+  const { getBrand, getCategory, search, genderLabels } = useCatalog();
   const [sort, setSort] = useState<SortKey>("tovsiye");
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(initialMax);
@@ -118,10 +118,10 @@ function CatalogInner({
   const [sheet, setSheet] = useState(false);
 
   const base = useMemo(() => {
-    let list = q ? searchProducts(q, products) : products;
+    let list = q ? search(q, products) : products;
     list = list.filter((p) => matchesGender(p, cins));
     return list;
-  }, [products, q, cins]);
+  }, [products, q, cins, search]);
 
   // facets are computed from the scoped list so counts are always honest
   const facets = useMemo(() => {
@@ -134,11 +134,11 @@ function CatalogInner({
       return [...m.entries()];
     };
     return {
-      brands: count((p) => p.brandSlug).sort((a, b) => (getBrand(a[0])?.name ?? "").localeCompare(getBrand(b[0])?.name ?? "", "az")),
-      cats: count((p) => p.category).sort((a, b) => (getCategory(a[0])?.title ?? "").localeCompare(getCategory(b[0])?.title ?? "", "az")),
+      brands: count((p) => p.brandSlug).sort((a, b) => (getBrand(a[0])?.name ?? "").localeCompare(getBrand(b[0])?.name ?? "", locale)),
+      cats: count((p) => p.category).sort((a, b) => (getCategory(a[0])?.title ?? "").localeCompare(getCategory(b[0])?.title ?? "", locale)),
       materials: count((p) => p.material?.split(",")[0].trim()).sort((a, b) => b[1] - a[1]),
     };
-  }, [base]);
+  }, [base, getBrand, getCategory, locale]);
 
   const filtered = useMemo(() => {
     const list = base.filter((p) => {
@@ -187,21 +187,22 @@ function CatalogInner({
     <div className="space-y-8">
       {showGenderFilter && (
         <fieldset>
-          <legend className="font-display text-xl font-medium">Kimin üçün</legend>
+          <legend className="font-display text-xl font-medium">{t.forWhom}</legend>
           <div className="mt-3 flex flex-wrap gap-2">
-            {GENDER_OPTIONS.map((g) => {
-              const active = (cins ?? "") === g.value;
+            {GENDER_VALUES.map((value) => {
+              const active = (cins ?? "") === value;
+              const label = value ? genderLabels[value] : t.all;
               return (
                 <button
-                  key={g.label}
+                  key={value || "all"}
                   type="button"
                   aria-pressed={active}
-                  onClick={() => setParam("cins", g.value)}
+                  onClick={() => setParam("cins", value)}
                   className={`min-h-10 rounded-full border px-4 text-sm transition-colors ${
                     active ? "border-garnet bg-garnet text-ivory" : "border-sand hover:border-cocoa"
                   }`}
                 >
-                  {g.label}
+                  {label}
                 </button>
               );
             })}
@@ -210,10 +211,10 @@ function CatalogInner({
       )}
 
       <fieldset>
-        <legend className="font-display text-xl font-medium">Qiymət</legend>
+        <legend className="font-display text-xl font-medium">{t.price}</legend>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <label className="text-xs text-muted">
-            Min. (₼)
+            {t.min}
             <input
               type="number"
               inputMode="numeric"
@@ -226,7 +227,7 @@ function CatalogInner({
             />
           </label>
           <label className="text-xs text-muted">
-            Maks. (₼)
+            {t.max}
             <input
               type="number"
               inputMode="numeric"
@@ -243,7 +244,7 @@ function CatalogInner({
 
       {showCategoryFilter && facets.cats.length > 1 && (
         <fieldset>
-          <legend className="font-display text-xl font-medium">Kateqoriya</legend>
+          <legend className="font-display text-xl font-medium">{t.category}</legend>
           <div className="mt-2">
             {facets.cats.map(([slug, n]) => (
               <Check key={slug} checked={catSel.includes(slug)} onChange={() => toggle(catSel, setCatSel, slug)} label={getCategory(slug)?.title ?? slug} count={n} />
@@ -254,7 +255,7 @@ function CatalogInner({
 
       {showBrandFilter && facets.brands.length > 1 && (
         <fieldset>
-          <legend className="font-display text-xl font-medium">Brend</legend>
+          <legend className="font-display text-xl font-medium">{t.brand}</legend>
           <div className="mt-2">
             {facets.brands.map(([slug, n]) => (
               <Check key={slug} checked={brandSel.includes(slug)} onChange={() => toggle(brandSel, setBrandSel, slug)} label={getBrand(slug)?.name ?? slug} count={n} />
@@ -265,7 +266,7 @@ function CatalogInner({
 
       {facets.materials.length > 1 && (
         <fieldset>
-          <legend className="font-display text-xl font-medium">Material</legend>
+          <legend className="font-display text-xl font-medium">{t.material}</legend>
           <div className="mt-2">
             {facets.materials.map(([m, n]) => (
               <Check key={m} checked={matSel.includes(m)} onChange={() => toggle(matSel, setMatSel, m)} label={m} count={n} />
@@ -275,10 +276,10 @@ function CatalogInner({
       )}
 
       <fieldset>
-        <legend className="font-display text-xl font-medium">Mövcudluq</legend>
+        <legend className="font-display text-xl font-medium">{t.availability}</legend>
         <div className="mt-2">
-          <Check checked={onlyStock} onChange={() => setOnlyStock(!onlyStock)} label="Yalnız stokda olanlar" />
-          <Check checked={onlySale} onChange={() => setOnlySale(!onlySale)} label="Yalnız endirimdə olanlar" />
+          <Check checked={onlyStock} onChange={() => setOnlyStock(!onlyStock)} label={t.onlyStock} />
+          <Check checked={onlySale} onChange={() => setOnlySale(!onlySale)} label={t.onlySale} />
         </div>
       </fieldset>
     </div>
@@ -286,27 +287,27 @@ function CatalogInner({
 
   const removable: { key: string; label: string; clear: () => void }[] = [
     ...(q ? [{ key: "q", label: `“${q}”`, clear: () => setParam("q", "") }] : []),
-    ...(cins ? [{ key: "cins", label: cins === "qadin" ? "Qadın" : "Kişi", clear: () => setParam("cins", "") }] : []),
+    ...(cins ? [{ key: "cins", label: genderLabels[cins], clear: () => setParam("cins", "") }] : []),
     ...catSel.map((s) => ({ key: `c${s}`, label: getCategory(s)?.title ?? s, clear: () => toggle(catSel, setCatSel, s) })),
     ...brandSel.map((s) => ({ key: `b${s}`, label: getBrand(s)?.name ?? s, clear: () => toggle(brandSel, setBrandSel, s) })),
     ...matSel.map((s) => ({ key: `m${s}`, label: s, clear: () => toggle(matSel, setMatSel, s) })),
     ...(minPrice > 0 || maxPrice < priceCeiling
       ? [{ key: "price", label: `${formatAZN(minPrice)} – ${formatAZN(maxPrice)}`, clear: () => (setMinPrice(0), setMaxPrice(priceCeiling)) }]
       : []),
-    ...(onlyStock ? [{ key: "stock", label: "Stokda var", clear: () => setOnlyStock(false) }] : []),
-    ...(onlySale ? [{ key: "sale", label: "Endirimdə", clear: () => setOnlySale(false) }] : []),
+    ...(onlyStock ? [{ key: "stock", label: t.inStockChip, clear: () => setOnlyStock(false) }] : []),
+    ...(onlySale ? [{ key: "sale", label: t.saleChip, clear: () => setOnlySale(false) }] : []),
   ];
 
   return (
     <div className="grid gap-x-12 lg:grid-cols-[16rem_1fr] xl:grid-cols-[17rem_1fr]">
-      <aside className="hidden lg:block" aria-label="Süzgəclər">
+      <aside className="hidden lg:block" aria-label={t.filters}>
         <div className="sticky top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto pb-8 pr-2">{panel}</div>
       </aside>
 
       <div className="min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
           <p className="text-sm text-muted" aria-live="polite">
-            {filtered.length} məhsul
+            {fmt(t.productsCount, { n: filtered.length })}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -315,18 +316,18 @@ function CatalogInner({
               className="btn btn-ghost min-h-11 px-4 text-sm lg:hidden"
             >
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-              Süzgəclər{activeCount ? ` (${activeCount})` : ""}
+              {activeCount ? fmt(t.filtersCount, { n: activeCount }) : t.filters}
             </button>
             <label className="flex items-center gap-2 text-sm">
-              <span className="sr-only sm:not-sr-only text-muted">Sırala:</span>
+              <span className="sr-only sm:not-sr-only text-muted">{t.sortBy}</span>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
                 className="field min-h-11 w-auto py-2 pr-8 text-sm"
               >
-                {(Object.keys(sortLabels) as SortKey[]).map((k) => (
+                {SORT_KEYS.map((k) => (
                   <option key={k} value={k}>
-                    {sortLabels[k]}
+                    {t2.sorts[k]}
                   </option>
                 ))}
               </select>
@@ -335,14 +336,14 @@ function CatalogInner({
         </div>
 
         {removable.length > 0 && (
-          <ul className="mt-4 flex flex-wrap gap-2" aria-label="Aktiv süzgəclər">
+          <ul className="mt-4 flex flex-wrap gap-2" aria-label={t.activeFilters}>
             {removable.map((r) => (
               <li key={r.key}>
                 <button
                   type="button"
                   onClick={r.clear}
                   className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-linen px-3.5 text-[0.8rem] transition-colors hover:bg-blush"
-                  aria-label={`${r.label} süzgəcini sil`}
+                  aria-label={fmt(t.removeFilter, { label: r.label })}
                 >
                   {r.label}
                   <X className="h-3 w-3" aria-hidden="true" />
@@ -352,7 +353,7 @@ function CatalogInner({
             {activeCount > 0 && (
               <li>
                 <button type="button" onClick={reset} className="link-u ml-1 text-[0.8rem]">
-                  Hamısını təmizlə
+                  {t.clearAll}
                 </button>
               </li>
             )}
@@ -364,16 +365,16 @@ function CatalogInner({
             <ProductGrid products={filtered} />
           ) : (
             <div className="rounded-sm bg-linen px-6 py-16 text-center md:py-24">
-              <p className="t-h2">Uyğun məhsul tapılmadı</p>
+              <p className="t-h2">{t.emptyTitle}</p>
               <p className="mx-auto mt-3 max-w-[44ch] text-muted">
-                {emptyHint ?? "Seçdiyiniz süzgəclərə uyğun məhsul yoxdur. Bəzi süzgəcləri silin və ya qiymət aralığını genişləndirin."}
+                {emptyHint ?? t.emptyDefault}
               </p>
               <div className="mt-7 flex flex-wrap justify-center gap-3">
                 <button type="button" onClick={() => { reset(); if (q) setParam("q", ""); }} className="btn btn-primary">
-                  Süzgəcləri təmizlə
+                  {t.clearFilters}
                 </button>
                 <Link href="/kataloq" className="btn btn-ghost">
-                  Bütün kataloq
+                  {t.fullCatalog}
                 </Link>
               </div>
             </div>
@@ -381,20 +382,20 @@ function CatalogInner({
         </div>
       </div>
 
-      <Overlay open={sheet} onClose={() => setSheet(false)} label="Süzgəclər" side="bottom" hideClose>
+      <Overlay open={sheet} onClose={() => setSheet(false)} label={t.filters} side="bottom" hideClose>
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
-          <h2 className="t-h3">Süzgəclər</h2>
+          <h2 className="t-h3">{t.filters}</h2>
           <button type="button" onClick={() => setSheet(false)} className="link-u text-sm">
-            Bağla
+            {t.close}
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-6">{panel}</div>
         <div className="flex gap-3 border-t border-line bg-ivory px-6 py-4">
           <button type="button" onClick={reset} className="btn btn-ghost flex-1">
-            Təmizlə
+            {t.clear}
           </button>
           <button type="button" onClick={() => setSheet(false)} className="btn btn-primary flex-[2]">
-            {filtered.length} məhsula bax
+            {fmt(t.viewProducts, { n: filtered.length })}
           </button>
         </div>
       </Overlay>

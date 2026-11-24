@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { useState } from "react";
 import { Gift } from "lucide-react";
-import { giftQuestions, occasionNames, wishes } from "@/data/gift";
+import { fmt } from "@/i18n/config";
+import { useCatalog } from "@/i18n/use-catalog";
+import { useT } from "@/i18n/provider";
 import { defaultOption } from "@/lib/catalog";
 import { recommendGifts, type GiftAnswers } from "@/lib/gift";
 import { shop } from "@/lib/shop-store";
@@ -14,30 +16,32 @@ import { QuizFlow, type QuizContext } from "./QuizFlow";
 
 function GiftResults({ answers, restart, back, headingRef }: QuizContext) {
   const { notify, openPanel } = useUI();
+  const t = useT().gift;
+  const catalog = useCatalog();
   const a = answers as unknown as GiftAnswers;
-  const options = wishes[a.occasion] ?? [];
+  const options = t.wishes[a.occasion] ?? [];
   const [wish, setWish] = useState(options[0] ?? "");
-  const picks = recommendGifts(a);
+  const picks = recommendGifts(a, catalog, t);
 
   const addAsGift = (id: string, option: string | undefined) => {
     shop.addToCart(id, option, 1);
     shop.setGift({ wrap: true, message: wish });
-    notify("Hədiyyə qablaşdırması və kart əlavə olundu");
+    notify(t.ui.added);
     openPanel("cart");
   };
 
   return (
     <div>
       <h2 ref={headingRef} tabIndex={-1} className="t-h2 outline-none">
-        {occasionNames[a.occasion] ?? "Hədiyyə"} üçün seçdiklərimiz
+        {fmt(t.ui.heading, { occasion: t.occasionNames[a.occasion] ?? t.ui.fallbackOccasion })}
       </h2>
       <p className="mt-3 max-w-[54ch] text-muted">
-        Yalnız stokda olan məhsulları seçdik. Hər birinin yanında niyə uyğun gəldiyini yazdıq.
+        {t.ui.lead}
       </p>
 
       <div className="mt-10 grid gap-10 border border-sand bg-linen/60 p-6 md:grid-cols-[1fr_auto] md:p-8">
         <fieldset>
-          <legend className="t-h3">Kart mesajını seçin</legend>
+          <legend className="t-h3">{t.ui.pickMessage}</legend>
           <div className="mt-4 space-y-2">
             {options.map((w) => (
               <label
@@ -68,7 +72,7 @@ function GiftResults({ answers, restart, back, headingRef }: QuizContext) {
                 onChange={() => setWish("")}
                 className="h-4 w-4 accent-[#7b1d3a]"
               />
-              <span>Mesajı özüm yazacağam (səbətdə)</span>
+              <span>{t.ui.ownMessage}</span>
             </label>
           </div>
         </fieldset>
@@ -76,7 +80,7 @@ function GiftResults({ answers, restart, back, headingRef }: QuizContext) {
       </div>
 
       {picks.length === 0 ? (
-        <p className="mt-10">Bu seçimlərə uyğun hədiyyə tapılmadı. Başqa cavablarla yenidən cəhd edin.</p>
+        <p className="mt-10">{t.ui.none}</p>
       ) : (
         <ul className="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {picks.map((r) => (
@@ -97,7 +101,7 @@ function GiftResults({ answers, restart, back, headingRef }: QuizContext) {
                 className="btn btn-ghost mt-4 w-full"
               >
                 <Gift className="h-4 w-4" aria-hidden="true" />
-                Hədiyyə kimi səbətə at
+                {t.ui.addAsGift}
               </button>
             </li>
           ))}
@@ -105,18 +109,18 @@ function GiftResults({ answers, restart, back, headingRef }: QuizContext) {
       )}
 
       <p className="t-small mt-6 text-muted">
-        Hədiyyə kimi əlavə etdikdə qablaşdırma seçilir və seçdiyiniz mesaj karta yazılır. Səbətdə dəyişə bilərsiniz.
+        {t.ui.footnote}
       </p>
 
       <div className="mt-10 flex flex-wrap gap-3">
         <button type="button" onClick={restart} className="btn btn-primary">
-          Yenidən başla
+          {t.ui.restart}
         </button>
         <button type="button" onClick={back} className="btn btn-ghost">
-          Son cavabı dəyiş
+          {t.ui.changeLast}
         </button>
         <Link href="/kataloq/hediyye-secimleri" className="btn btn-ghost">
-          Bütün hədiyyə seçimləri
+          {t.ui.allGifts}
         </Link>
       </div>
     </div>
@@ -124,10 +128,11 @@ function GiftResults({ answers, restart, back, headingRef }: QuizContext) {
 }
 
 export function GiftFinder() {
+  const t = useT().gift;
   return (
     <QuizFlow
-      questions={giftQuestions}
-      progressLabel="Hədiyyə sihirbazının irəliləyişi"
+      questions={t.questions}
+      progressLabel={t.progress}
       renderResults={(ctx) => <GiftResults {...ctx} />}
     />
   );

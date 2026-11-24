@@ -35,6 +35,23 @@ export interface ProductOption {
   values: OptionValue[];
 }
 
+/** Optional EN/RU text for a product, filled in the admin panel. Missing fields fall back to Azerbaijani. */
+export interface ProductI18n {
+  title?: string;
+  description?: string;
+  optionLabel?: string;
+  material?: string;
+  color?: string;
+  subtype?: string;
+}
+
+export interface BrandI18n {
+  specialty?: string;
+  blurb?: string;
+}
+
+export type TranslatedLocale = "en" | "ru";
+
 export interface Product {
   id: string;
   slug: string;
@@ -63,6 +80,8 @@ export interface Product {
   added: number;
   description: string;
   specs: { label: string; value: string }[];
+  /** EN/RU overrides (real catalog) */
+  i18n?: Partial<Record<TranslatedLocale, ProductI18n>>;
 }
 
 export interface Category {
@@ -93,6 +112,7 @@ export interface Brand {
   blurb: string;
   tone: Tone;
   kind: ArtKind;
+  i18n?: Partial<Record<TranslatedLocale, BrandI18n>>;
 }
 
 export interface GiftOptions {

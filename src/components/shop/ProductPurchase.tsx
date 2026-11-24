@@ -10,9 +10,13 @@ import { shop } from "@/lib/shop-store";
 import { useUI } from "@/lib/ui-store";
 import type { Product } from "@/lib/types";
 import { live } from "@/lib/flags";
+import { fmt } from "@/i18n/config";
+import { useT } from "@/i18n/provider";
 
 export function ProductPurchase({ product }: { product: Product }) {
   const { openPanel, notify } = useUI();
+  const t = useT().shop.purchase;
+  const tc = useT().shop.card;
   // start on the first variant that is actually in stock
   const firstOption = product.option?.values.find((v) => unitsAvailable(product, v.name) > 0)?.name ?? product.option?.values[0]?.name;
   const [option, setOption] = useState<string | undefined>(firstOption);
@@ -55,7 +59,7 @@ export function ProductPurchase({ product }: { product: Product }) {
   const add = () => {
     if (!available) return;
     shop.addToCart(product.id, option, Math.min(qty, maxQty));
-    notify(qty > 1 ? `${qty} ədəd səbətə əlavə olundu` : "Səbətə əlavə olundu");
+    notify(qty > 1 ? fmt(t.addedMany, { n: qty }) : tc.added);
     openPanel("cart");
   };
 
@@ -105,16 +109,16 @@ export function ProductPurchase({ product }: { product: Product }) {
           className={`h-2 w-2 rounded-full ${available ? "bg-[#5f8a63]" : "bg-[#a3392f]"}`}
         />
         {!available
-          ? product.option ? "Bu seçim üçün stok yoxdur" : "Hazırda stokda yoxdur"
-          : Number.isFinite(units) && units <= 3 ? `Son ${units} ədəd` : "Stokda var"}
-        {!live && <span className="text-muted">· nümayiş məlumatı</span>}
+          ? product.option ? t.noStockOption : t.noStock
+          : Number.isFinite(units) && units <= 3 ? fmt(t.lastUnits, { n: units }) : t.inStock}
+        {!live && <span className="text-muted">{t.demoData}</span>}
       </p>
 
       <div className="mt-7 flex flex-wrap items-stretch gap-3">
-        <div className="flex items-center rounded-full border border-sand" role="group" aria-label="Say">
+        <div className="flex items-center rounded-full border border-sand" role="group" aria-label={t.qty}>
           <button
             type="button"
-            aria-label="Sayı azalt"
+            aria-label={t.less}
             disabled={qty <= 1}
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             className="grid h-12 w-12 place-items-center rounded-full hover:bg-linen disabled:opacity-40"
@@ -126,7 +130,7 @@ export function ProductPurchase({ product }: { product: Product }) {
           </span>
           <button
             type="button"
-            aria-label="Sayı artır"
+            aria-label={t.more}
             disabled={qty >= maxQty}
             onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
             className="grid h-12 w-12 place-items-center rounded-full hover:bg-linen disabled:opacity-40"
@@ -136,7 +140,7 @@ export function ProductPurchase({ product }: { product: Product }) {
         </div>
         <button ref={addRef} type="button" onClick={add} disabled={!available} className="btn btn-primary min-w-[14rem] flex-1">
           <ShoppingBag className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
-          Səbətə at
+          {t.addToCart}
         </button>
       </div>
       <WishlistButton productId={product.id} title={product.title} variant="full" className="mt-3 w-full" />
@@ -145,7 +149,7 @@ export function ProductPurchase({ product }: { product: Product }) {
         <div
           className="anim-up fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-line bg-ivory/95 px-4 py-3 shadow-[0_-12px_30px_-18px_rgba(74,14,34,0.4)] backdrop-blur md:hidden"
           role="region"
-          aria-label="Sürətli satın alma"
+          aria-label={t.quickBuy}
         >
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-[1.05rem] font-medium leading-tight">{product.title}</p>
@@ -155,7 +159,7 @@ export function ProductPurchase({ product }: { product: Product }) {
             </div>
           </div>
           <button type="button" onClick={add} disabled={!available} className="btn btn-primary shrink-0 px-5">
-            {available ? "Səbətə at" : "Stokda yoxdur"}
+            {available ? t.addToCart : t.outOfStock}
           </button>
         </div>
       )}

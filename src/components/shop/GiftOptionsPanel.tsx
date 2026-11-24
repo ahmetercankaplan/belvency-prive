@@ -5,9 +5,12 @@ import { site } from "@/data/site";
 import { formatAZN } from "@/lib/format";
 import { shop, useShop } from "@/lib/shop-store";
 import { GiftCardPreview } from "./GiftCardPreview";
+import { fmt } from "@/i18n/config";
+import { useT } from "@/i18n/provider";
 
 export function GiftOptionsPanel() {
   const { gift } = useShop();
+  const t = useT().shop.giftPanel;
   const left = site.giftMessageMax - gift.message.length;
 
   return (
@@ -16,7 +19,7 @@ export function GiftOptionsPanel() {
         <div>
           <h2 id="gift-title" className="t-h3 flex items-center gap-2.5">
             <Gift className="h-5 w-5 text-garnet-bright" aria-hidden="true" />
-            Hədiyyə olaraq göndərin
+            {t.title}
           </h2>
 
           <label className="mt-5 flex min-h-12 cursor-pointer items-center gap-3">
@@ -27,13 +30,13 @@ export function GiftOptionsPanel() {
               className="h-[1.15rem] w-[1.15rem] accent-[#7b1d3a]"
             />
             <span>
-              Hədiyyə qablaşdırması <span className="text-muted">(+{formatAZN(site.giftWrapFee)})</span>
+              {t.wrap} <span className="text-muted">(+{formatAZN(site.giftWrapFee)})</span>
             </span>
           </label>
 
           <div className="mt-3">
             <label htmlFor="gift-msg" className="mb-1.5 block text-sm">
-              Kart mesajı <span className="text-muted">(könüllü)</span>
+              {t.message} <span className="text-muted">{t.optional}</span>
             </label>
             <textarea
               id="gift-msg"
@@ -41,15 +44,15 @@ export function GiftOptionsPanel() {
               maxLength={site.giftMessageMax}
               value={gift.message}
               onChange={(e) => shop.setGift({ message: e.target.value })}
-              placeholder="Məsələn: Ad günün mübarək! Sənə həmişə zərif anlar arzulayıram."
+              placeholder={t.placeholder}
               className="field resize-none"
               aria-describedby="gift-msg-count"
             />
             <p id="gift-msg-count" className="mt-1.5 text-[0.8rem] text-muted" aria-live="polite">
-              {left} xarakter qalıb
+              {fmt(t.left, { n: left })}
             </p>
           </div>
-          <p className="t-small mt-3 text-muted">Mesaj kartda çap olunur, qiymət göstərilmir.</p>
+          <p className="t-small mt-3 text-muted">{t.note}</p>
         </div>
 
         <GiftCardPreview message={gift.message} />

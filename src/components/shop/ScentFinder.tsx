@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { questions } from "@/data/scent";
 import { recommend, type Answers } from "@/lib/scent";
 import { ProductCard } from "./ProductCard";

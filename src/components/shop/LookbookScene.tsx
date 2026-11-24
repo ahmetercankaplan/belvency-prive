@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { useEffect, useId, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Price } from "@/components/ui/Price";

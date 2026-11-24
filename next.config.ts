@@ -6,6 +6,9 @@ import type { NextConfig } from "next";
  */
 const exporting = process.env.STATIC_EXPORT === "1";
 
+/** Storefront routes that used to live at the site root before /az, /en, /ru existed. */
+const OLD_PATHS = ["kataloq", "mehsul", "brendler", "qadin", "kisi", "sebet", "odenis", "sevimliler", "hediyye-sihirbazi", "etir-tapici", "lookbook", "haqqimizda", "sertler", "mexfilik", "catdirilma", "qaytarma", "elaqe"];
+
 const nextConfig: NextConfig = {
   ...(exporting ? { output: "export" as const, images: { unoptimized: true } } : {}),
   // lets a second dev server run side by side (NEXT_DIST_DIR=.next-test)
@@ -14,6 +17,15 @@ const nextConfig: NextConfig = {
   // On Netlify the /api/* path is served by netlify/functions/api.ts (static export has no rewrites).
   ...(!exporting && process.env.API_PROXY
     ? { rewrites: async () => [{ source: "/api/:path*", destination: `${process.env.API_PROXY}/api/:path*` }] }
+    : {}),
+  // Local dev: the old unprefixed addresses go to the Azerbaijani pages (Netlify does this in netlify.toml)
+  ...(!exporting
+    ? {
+        redirects: async () =>
+          OLD_PATHS.map((p) => ({ source: `/${p}`, destination: `/az/${p}`, permanent: false })).concat(
+            OLD_PATHS.map((p) => ({ source: `/${p}/:rest*`, destination: `/az/${p}/:rest*`, permanent: false })),
+          ),
+      }
     : {}),
   turbopack: {
     root: process.cwd(),

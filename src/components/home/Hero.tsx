@@ -1,16 +1,18 @@
-import Link from "next/link";
-import { getProduct, products } from "@/data/products";
+import Link from "@/i18n/link";
 import { live } from "@/lib/flags";
 import { defaultOption, priceFor } from "@/lib/catalog";
+import { getDict } from "@/i18n/dict";
+import type { Locale } from "@/i18n/config";
+import { getCatalog } from "@/i18n/server";
 import { HeroArches } from "./HeroArches";
 
-const lines = ["Zövqlə", "seçilmiş", "lüks"];
-
-export function Hero() {
-  const p = live ? [...products].sort((a, b) => b.added - a.added)[0] : getProduct("ay-isigi-qolbaq");
+export function Hero({ locale }: { locale: Locale }) {
+  const d = getDict(locale).home.hero;
+  const c = getCatalog(locale);
+  const p = live ? [...c.products].sort((a, b) => b.added - a.added)[0] : c.getProduct("ay-isigi-qolbaq");
   const featured = p
     ? { href: `/mehsul/${p.slug}`, title: p.title, price: priceFor(p, defaultOption(p)).current }
-    : { href: "/kataloq", title: "Yeni kolleksiya", price: 0 };
+    : { href: "/kataloq", title: d.newCollection, price: 0 };
 
   return (
     <section className="on-dark relative overflow-hidden bg-garnet text-ivory">
@@ -35,21 +37,21 @@ export function Hero() {
       <div className="container-x relative grid items-center gap-14 pb-16 pt-10 md:pb-20 md:pt-12 lg:grid-cols-12 lg:gap-8 lg:py-14">
         <div className="lg:col-span-5">
           <h1 className="t-hero">
-            {lines.map((l, i) => (
+            {d.lines.map((l, i) => (
               <span key={l} className="line">
                 <span style={{ "--d": `${0.15 + i * 0.14}s` } as React.CSSProperties}>{l}</span>
               </span>
             ))}
           </h1>
           <p className="t-lead anim-fade mt-7 !text-ivory/80" style={{ animationDelay: "0.75s" }}>
-            Ətir, zərgərlik, çanta və aksesuarlar — Bakıdan başlayaraq Azərbaycanın hər yerinə çatdırılma ilə.
+            {d.lead}
           </p>
           <div className="anim-fade mt-9 flex flex-wrap gap-3" style={{ animationDelay: "0.9s" }}>
             <Link href="/kataloq/yeni-gelenler" className="btn btn-gold">
-              Kolleksiyaya bax
+              {d.cta}
             </Link>
             <Link href="/kataloq/hediyye-secimleri" className="btn btn-ghost-light">
-              Hədiyyə seçimləri
+              {d.giftPicks}
             </Link>
           </div>
         </div>

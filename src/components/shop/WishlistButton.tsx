@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Heart } from "lucide-react";
 import { shop, useShop } from "@/lib/shop-store";
 import { useUI } from "@/lib/ui-store";
+import { fmt } from "@/i18n/config";
+import { useT } from "@/i18n/provider";
 
 interface Props {
   productId: string;
@@ -16,6 +18,7 @@ interface Props {
 export function WishlistButton({ productId, title, variant = "icon", className = "" }: Props) {
   const { wishlist } = useShop();
   const { notify } = useUI();
+  const t = useT().shop.wishlistBtn;
   const active = wishlist.includes(productId);
   const [pulse, setPulse] = useState(0);
 
@@ -24,7 +27,7 @@ export function WishlistButton({ productId, title, variant = "icon", className =
     e.stopPropagation();
     const added = shop.toggleWishlist(productId);
     setPulse((n) => n + 1);
-    notify(added ? "Sevimlilərə əlavə olundu" : "Sevimlilərdən çıxarıldı");
+    notify(added ? t.added : t.removed);
   };
 
   const icon = (
@@ -44,7 +47,7 @@ export function WishlistButton({ productId, title, variant = "icon", className =
         className={`btn btn-ghost ${className}`}
       >
         {icon}
-        {active ? "Sevimlilərdədir" : "Sevimlilərə at"}
+        {active ? t.inWishlist : t.add}
       </button>
     );
   }
@@ -54,7 +57,7 @@ export function WishlistButton({ productId, title, variant = "icon", className =
       type="button"
       onClick={toggle}
       aria-pressed={active}
-      aria-label={active ? `${title} — sevimlilərdən çıxar` : `${title} — sevimlilərə əlavə et`}
+      aria-label={fmt(active ? t.removeAria : t.addAria, { title })}
       className={`grid h-11 w-11 place-items-center rounded-full bg-ivory/85 text-cocoa backdrop-blur transition-colors hover:bg-ivory ${className}`}
     >
       {icon}

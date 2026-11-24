@@ -1,7 +1,8 @@
-import { getCategory } from "@/data/categories";
-import { products } from "@/data/products";
 import { defaultOption, matchesGender, priceFor } from "@/lib/catalog";
 import { formatAZN } from "@/lib/format";
+import { fmt } from "@/i18n/config";
+import type { Catalog } from "@/i18n/catalog";
+import type { Dict } from "@/i18n/dict";
 import type { Product } from "@/lib/types";
 
 export interface GiftAnswers {
@@ -15,43 +16,42 @@ export interface GiftPick {
   product: Product;
   score: number;
   overBudget: boolean;
-  fit: "Çox uyğun" | "Yaxşı uyğun" | "Alternativ";
+  fit: string;
   reasons: string[];
 }
 
-const groupName: Record<string, string> = { gozellik: "gözəllik", zerger: "zərgərlik", moda: "moda" };
-
-export function recommendGifts(a: GiftAnswers): GiftPick[] {
+/** Gift suggestions from the (already translated) catalog; reasons are written in the visitor's language. */
+export function recommendGifts(a: GiftAnswers, c: Catalog, t: Dict["gift"]): GiftPick[] {
   const maxPrice = a.budget === "any" ? Infinity : Number(a.budget);
 
-  const scored = products
+  const scored = c.products
     .filter((p) => p.inStock && matchesGender(p, a.for))
     .map((p) => {
       const price = priceFor(p, defaultOption(p)).current;
-      const group = getCategory(p.category)?.group ?? "";
+      const group = c.getCategory(p.category)?.group ?? "";
       const reasons: string[] = [];
       let score = 0;
       const overBudget = price > maxPrice;
 
       if (a.style !== "any" && group === a.style) {
         score += 4;
-        reasons.push(`Seçdiyiniz növdən: ${groupName[a.style]}`);
+        reasons.push(fmt(t.reasons.style, { group: t.groups[a.style] }));
       }
       if (p.tags.includes("hediyye")) {
         score += 3;
-        reasons.push("Hədiyyə seçimləri kolleksiyasındandır");
+        reasons.push(t.reasons.giftCollection);
       }
       if (a.occasion === "yubiley" && p.tags.includes("ekskluziv")) {
         score += 1;
-        reasons.push("Eksklüziv kolleksiyadandır — xüsusi tarixlər üçün");
+        reasons.push(t.reasons.exclusive);
       }
       if (!overBudget) {
         score += 1;
-        if (a.budget !== "any") reasons.push(`Büdcənizə uyğundur (${formatAZN(price)})`);
+        if (a.budget !== "any") reasons.push(fmt(t.reasons.inBudget, { price: formatAZN(price) }));
       } else {
         // never present an over-budget gift as a perfect match
         score -= 6;
-        reasons.push(`Büdcənizdən yuxarıdır (${formatAZN(price)})`);
+        reasons.push(fmt(t.reasons.overBudget, { price: formatAZN(price) }));
       }
       return { product: p, score, overBudget, reasons };
     })
@@ -60,7 +60,7 @@ export function recommendGifts(a: GiftAnswers): GiftPick[] {
 
   return scored.map((r) => ({
     ...r,
-    fit: r.overBudget ? "Alternativ" : r.score >= 7 ? "Çox uyğun" : r.score >= 4 ? "Yaxşı uyğun" : "Alternativ",
-    reasons: r.reasons.length ? r.reasons : ["Seçimlərinizə ən yaxın alternativdir"],
+    fit: r.overBudget ? t.fit.alt : r.score >= 7 ? t.fit.great : r.score >= 4 ? t.fit.good : t.fit.alt,
+    reasons: r.reasons.length ? r.reasons : [t.reasons.fallback],
   }));
 }

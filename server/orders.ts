@@ -5,6 +5,7 @@ import { productKey, type StoredProduct } from "./catalog.ts";
 import { fail, num, oneOf, str, type Env } from "./http.ts";
 import type { Store } from "./store.ts";
 import { notifyTelegram } from "./telegram.ts";
+import { msg, parseLang, type Lang } from "./messages.ts";
 
 export const ORDER_STATUSES = ["yeni", "tesdiqlendi", "gonderildi", "catdirildi", "legv"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -41,6 +42,8 @@ export interface Order {
   pricing: { subtotal: number; delivery: number; giftFee: number; total: number };
   gift: { wrap: boolean; message: string };
   payment: { method: PaymentMethod; status: "gozlenir" | "odenilib" };
+  /** language the customer was browsing in (az when missing) */
+  lang?: Lang;
   adminNote: string;
   notified: boolean;
   history: { at: string; status: OrderStatus }[];
@@ -96,30 +99,32 @@ interface OrderInput {
   customer: Order["customer"];
   gift: Order["gift"];
   method: PaymentMethod;
+  lang: Lang;
 }
 
 export function parseOrderInput(raw: Record<string, unknown>, env: Env): OrderInput {
-  if (typeof raw.website === "string" && raw.website.trim() !== "") fail(400, "Sorğu qəbul edilmədi");
+  const lang = parseLang(raw.lang);
+  if (typeof raw.website === "string" && raw.website.trim() !== "") fail(400, msg(lang, "rejected"));
 
-  if (!Array.isArray(raw.lines) || raw.lines.length < 1 || raw.lines.length > 12) fail(400, "Səbət boşdur və ya çox böyükdür");
+  if (!Array.isArray(raw.lines) || raw.lines.length < 1 || raw.lines.length > 12) fail(400, msg(lang, "emptyCart"));
   const seen = new Set<string>();
   const lines = raw.lines.map((l) => {
     const r = (l ?? {}) as Record<string, unknown>;
     const id = str(r.id, "Məhsul", { min: 1, max: 40 });
     const option = r.option === undefined || r.option === null || r.option === "" ? undefined : str(r.option, "Seçim", { max: 40 });
     const key = `${id}|${option ?? ""}`;
-    if (seen.has(key)) fail(400, "Eyni məhsul səbətdə təkrarlanır");
+    if (seen.has(key)) fail(400, msg(lang, "duplicate"));
     seen.add(key);
     return { id, option, qty: num(r.qty, "Say", { min: 1, max: 10, int: true }) };
   });
 
   const c = (raw.customer ?? {}) as Record<string, unknown>;
   const phone = parseAzPhone(str(c.phone, "Telefon", { min: 1, max: 30 }));
-  if (!phone) fail(400, "Telefon nömrəsi düzgün deyil (məsələn: 050 123 45 67)");
+  if (!phone) fail(400, msg(lang, "phone"));
   const email = str(c.email, "E-poçt", { max: 120, optional: true });
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) fail(400, "E-poçt ünvanı düzgün deyil");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) fail(400, msg(lang, "email"));
   const region = str(c.region, "Şəhər / rayon", { min: 1, max: 40 });
-  if (!regions.includes(region)) fail(400, "Şəhər / rayon yanlışdır");
+  if (!regions.includes(region)) fail(400, msg(lang, "region"));
 
   const g = (raw.gift ?? {}) as Record<string, unknown>;
   const message = str(g.message, "Kart mesajı", { max: site.giftMessageMax, optional: true });
@@ -138,6 +143,7 @@ export function parseOrderInput(raw: Record<string, unknown>, env: Env): OrderIn
     },
     gift: { wrap: g.wrap === true, message },
     method: oneOf(raw.method, "Ödəniş üsulu", allowed),
+    lang,
   };
 }
 
@@ -147,6 +153,7 @@ export function orderToText(o: Order): string {
     `${o.customer.name} ${o.customer.surname} · ${o.customer.phone}`,
     `${o.customer.region}, ${o.customer.address}`,
     o.customer.note ? `Qeyd: ${o.customer.note}` : "",
+    o.lang && o.lang !== "az" ? `Müştəri dili: ${o.lang.toUpperCase()}` : "",
   ].filter(Boolean);
   const items = o.lines.map((l) => `• ${l.title}${l.option ? ` (${l.option})` : ""} × ${l.qty} — ${formatAZN(l.unitPrice * l.qty)}`);
   const totals = [
@@ -173,8 +180,8 @@ export async function createOrder(
   const priced: OrderLine[] = [];
   for (const l of input.lines) {
     const p = await store.get<StoredProduct>(productKey(l.id));
-    if (!p || !p.active) fail(409, "Səbətdəki məhsullardan biri artıq satışda deyil. Səbəti yeniləyin.");
-    if (p.option && !p.option.values.some((v) => v.name === l.option)) fail(400, `“${p.title}” üçün seçim yanlışdır`);
+    if (!p || !p.active) fail(409, msg(input.lang, "unavailable"));
+    if (p.option && !p.option.values.some((v) => v.name === l.option)) fail(400, msg(input.lang, "badOption", { title: p.title }));
     priced.push({ productId: p.id, title: p.title, option: l.option, qty: l.qty, unitPrice: priceFor(p, l.option).current });
   }
 
@@ -182,7 +189,7 @@ export async function createOrder(
   try {
     for (const l of priced) {
       if (!(await reserve(store, l.productId, l.option, l.qty))) {
-        fail(409, `“${l.title}${l.option ? ` (${l.option})` : ""}” üçün kifayət qədər stok yoxdur`);
+        fail(409, msg(input.lang, "noStock", { item: `${l.title}${l.option ? ` (${l.option})` : ""}` }));
       }
       reserved.push(l);
     }
@@ -201,6 +208,7 @@ export async function createOrder(
       pricing: { subtotal, delivery, giftFee, total: Math.round((subtotal + delivery + giftFee) * 100) / 100 },
       gift: input.gift,
       payment: { method: input.method, status: "gozlenir" },
+      ...(input.lang !== "az" ? { lang: input.lang } : {}),
       adminNote: "",
       notified: false,
       history: [{ at: now.toISOString(), status: "yeni" }],
@@ -214,7 +222,7 @@ export async function createOrder(
         return cur ?? order;
       });
     }
-    if (!saved) fail(500, "Sifariş nömrəsi yaradıla bilmədi, yenidən cəhd edin");
+    if (!saved) fail(500, msg(input.lang, "noId"));
 
     const res = await notifyTelegram(env, orderToText(order), fetchImpl);
     if (res.sent) {

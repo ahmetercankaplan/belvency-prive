@@ -1,7 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { getBrand } from "@/data/brands";
+import Link from "@/i18n/link";
+import { useCatalog } from "@/i18n/use-catalog";
+import { fmt } from "@/i18n/config";
+import { useT } from "@/i18n/provider";
 import { defaultOption, priceFor } from "@/lib/catalog";
 import { discountPercent } from "@/lib/format";
 import { shop } from "@/lib/shop-store";
@@ -14,6 +16,8 @@ import { ProductImage } from "@/components/ui/ProductImage";
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   void priority;
   const { notify } = useUI();
+  const t = useT().shop.card;
+  const { getBrand } = useCatalog();
   const brand = getBrand(product.brandSlug);
   const opt = defaultOption(product);
   const pr = priceFor(product, opt);
@@ -42,7 +46,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         )}
         {!product.inStock && (
           <span className="absolute bottom-3 left-3 rounded-full bg-cocoa/85 px-3 py-1 text-[0.75rem] text-ivory">
-            Stokda yoxdur
+            {t.outOfStock}
           </span>
         )}
         <WishlistButton productId={product.id} title={product.title} className="absolute right-2.5 top-2.5 z-10" />
@@ -51,11 +55,11 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             type="button"
             onClick={() => {
               shop.addToCart(product.id, undefined, 1);
-              notify("Səbətə əlavə olundu");
+              notify(t.added);
             }}
             className="absolute inset-x-3 bottom-3 z-10 hidden translate-y-2 rounded-full bg-ivory/95 py-2.5 text-sm font-medium opacity-0 backdrop-blur transition-all duration-300 hover:bg-cocoa hover:text-ivory focus-visible:translate-y-0 focus-visible:opacity-100 group-hover:translate-y-0 group-hover:opacity-100 md:block"
           >
-            Səbətə at
+            {t.addToCart}
           </button>
         )}
       </div>
@@ -72,7 +76,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         <Price price={pr.price} salePrice={pr.salePrice} className="mt-0.5" />
         {product.option && product.option.values.length > 1 && (
           <p className="t-small text-muted">
-            {product.option.values.length} {product.option.label.toLowerCase()} seçimi
+            {fmt(t.options, { n: product.option.values.length, label: product.option.label.toLowerCase() })}
           </p>
         )}
       </div>

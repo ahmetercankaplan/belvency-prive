@@ -1,28 +1,33 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Heart, Menu, Search, ShoppingBag, User } from "lucide-react";
 import { mainNav } from "@/data/site";
-import { groups } from "@/data/categories";
 import { categoriesFor } from "@/lib/catalog";
+import { useCatalog } from "@/i18n/use-catalog";
+import { useT } from "@/i18n/provider";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { cartTotals, useHydrated, useShop } from "@/lib/shop-store";
 import { useUI } from "@/lib/ui-store";
 import { Logo } from "@/components/ui/Logo";
 import { ProductArt } from "@/components/ui/ProductArt";
 import type { Gender } from "@/lib/types";
 import { live } from "@/lib/flags";
+import { fmt } from "@/i18n/config";
 
 type MenuKey = "qadin" | "kisi";
 
 function MegaMenu({ gender, onNavigate }: { gender: MenuKey; onNavigate: () => void }) {
-  const cats = categoriesFor(gender as Gender);
+  const t = useT().chrome;
+  const { groups, categories } = useCatalog();
+  const cats = categoriesFor(gender as Gender, categories);
+  const title = gender === "qadin" ? t.mega.womenTitle : t.mega.menTitle;
   const art =
     gender === "qadin"
-      ? ({ kind: "perfume", tone: "blush", label: "Qadın kolleksiyası" } as const)
-      : ({ kind: "watch", tone: "cocoa", label: "Kişi kolleksiyası" } as const);
-  const title = gender === "qadin" ? "Qadın kolleksiyası" : "Kişi kolleksiyası";
+      ? ({ kind: "perfume", tone: "blush", label: title } as const)
+      : ({ kind: "watch", tone: "cocoa", label: title } as const);
 
   return (
     <div className="anim-drop absolute inset-x-0 top-full border-t border-line bg-ivory shadow-[0_30px_50px_-30px_rgba(52,46,44,.25)]">
@@ -57,19 +62,19 @@ function MegaMenu({ gender, onNavigate }: { gender: MenuKey; onNavigate: () => v
           </div>
           <div>
             <p className="t-h3">{title}</p>
-            <p className="mt-2 text-sm text-muted">Bu mövsümün seçilmiş modellərinə baxın.</p>
+            <p className="mt-2 text-sm text-muted">{t.mega.blurb}</p>
             <Link href={`/${gender}`} onClick={onNavigate} className="link-u mt-4 inline-block text-sm font-medium">
-              Hamısına bax
+              {t.mega.viewAll}
             </Link>
             {!live && (
               <>
                 <br />
                 <Link href="/etir-tapici" onClick={onNavigate} className="link-u mt-3 inline-block text-sm font-medium text-garnet-bright">
-                  Ətir tapıcı
+                  {t.mega.scentFinder}
                 </Link>
                 <br />
                 <Link href="/lookbook" onClick={onNavigate} className="link-u mt-3 inline-block text-sm font-medium">
-                  Lookbook
+                  {t.mega.lookbook}
                 </Link>
               </>
             )}
@@ -81,6 +86,7 @@ function MegaMenu({ gender, onNavigate }: { gender: MenuKey; onNavigate: () => v
 }
 
 export function Header() {
+  const t = useT().chrome;
   const { cart, wishlist } = useShop();
   const hydrated = useHydrated();
   const { openPanel } = useUI();
@@ -143,12 +149,12 @@ export function Header() {
           <button
             type="button"
             className={`${iconBtn} -ml-2 lg:hidden`}
-            aria-label="Menyunu aç"
+            aria-label={t.header.openMenu}
             onClick={() => openPanel("menu")}
           >
             <Menu className="h-[1.35rem] w-[1.35rem]" aria-hidden="true" />
           </button>
-          <nav aria-label="Əsas menyu" className="hidden lg:block">
+          <nav aria-label={t.header.mainMenu} className="hidden lg:block">
             <ul className="flex items-center gap-7">
               {mainNav.map((item) => (
                 <li key={item.href} onMouseEnter={() => ("menu" in item && item.menu ? open(item.menu) : setMenu(null))}>
@@ -163,7 +169,7 @@ export function Header() {
                           menu === item.menu ? "text-garnet-bright" : "hover:text-garnet-bright"
                         }`}
                       >
-                        {item.label}
+                        {t.nav[item.key]}
                         <ChevronDown
                           className={`h-3.5 w-3.5 transition-transform duration-300 ${menu === item.menu ? "rotate-180" : ""}`}
                           aria-hidden="true"
@@ -180,7 +186,7 @@ export function Header() {
                       href={item.href}
                       className="block py-2 text-[0.95rem] tracking-[0.02em] transition-colors hover:text-garnet-bright"
                     >
-                      {item.label}
+                      {t.nav[item.key]}
                     </Link>
                   )}
                 </li>
@@ -194,35 +200,14 @@ export function Header() {
 
         {/* right */}
         <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-          <details className="group relative hidden md:block">
-            <summary
-              className="flex h-11 cursor-pointer list-none items-center gap-1 rounded-full px-3 text-[0.85rem] transition-colors hover:bg-linen [&::-webkit-details-marker]:hidden"
-              aria-label="Dil seçimi"
-            >
-              AZ
-              <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" aria-hidden="true" />
-            </summary>
-            <ul className="anim-drop absolute right-0 top-full z-10 mt-1 w-40 rounded-xl border border-line bg-ivory p-1.5 text-sm shadow-lg">
-              <li>
-                <span className="flex items-center justify-between rounded-lg bg-linen px-3 py-2" aria-current="true">
-                  Azərbaycan dili <span className="sr-only">(seçilib)</span>
-                </span>
-              </li>
-              <li className="flex items-center justify-between px-3 py-2 text-muted">
-                English <span className="text-xs">tezliklə</span>
-              </li>
-              <li className="flex items-center justify-between px-3 py-2 text-muted">
-                Русский <span className="text-xs">tezliklə</span>
-              </li>
-            </ul>
-          </details>
-          <button type="button" className={iconBtn} aria-label="Axtarış" onClick={() => openPanel("search")}>
+          <LanguageSwitcher className="hidden md:block" />
+          <button type="button" className={iconBtn} aria-label={t.header.search} onClick={() => openPanel("search")}>
             <Search className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
           </button>
-          <button type="button" className={`${iconBtn} hidden sm:grid`} aria-label="Hesab" onClick={() => openPanel("account")}>
+          <button type="button" className={`${iconBtn} hidden sm:grid`} aria-label={t.header.account} onClick={() => openPanel("account")}>
             <User className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
           </button>
-          <Link href="/sevimliler" className={iconBtn} aria-label={`Sevimlilər${hydrated ? `, ${wishlist.length} məhsul` : ""}`}>
+          <Link href="/sevimliler" className={iconBtn} aria-label={hydrated ? fmt(t.header.wishlistCount, { n: wishlist.length }) : t.header.wishlist}>
             <Heart className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
             {hydrated && wishlist.length > 0 && (
               <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-garnet-bright px-1 text-[0.65rem] font-medium leading-none text-ivory">
@@ -233,7 +218,7 @@ export function Header() {
           <button
             type="button"
             className={iconBtn}
-            aria-label={`Səbət${hydrated ? `, ${count} məhsul` : ""}`}
+            aria-label={hydrated ? fmt(t.header.cartCount, { n: count }) : t.header.cart}
             onClick={() => openPanel("cart")}
           >
             <ShoppingBag className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />

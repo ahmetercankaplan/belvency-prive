@@ -23,7 +23,12 @@ interface VariantRow {
   stock: string;
 }
 
+type TextKey = "title" | "description" | "optionLabel" | "material" | "color" | "subtype";
+type Translation = Record<TextKey, string>;
+const emptyT = (): Translation => ({ title: "", description: "", optionLabel: "", material: "", color: "", subtype: "" });
+
 interface Form {
+  i18n: { en: Translation; ru: Translation };
   title: string;
   slug: string;
   brandSlug: string;
@@ -46,6 +51,7 @@ interface Form {
 }
 
 const blank = (brand = "", category = ""): Form => ({
+  i18n: { en: emptyT(), ru: emptyT() },
   title: "", slug: "", brandSlug: brand, category, subtype: "", gender: "qadin", price: "", salePrice: "",
   hasOptions: false, stock: "0", optionLabel: "Ölçü", variants: [{ name: "", price: "", salePrice: "", stock: "0" }],
   tags: [], material: "", color: "", description: "", specs: [], images: [], active: true,
@@ -53,6 +59,7 @@ const blank = (brand = "", category = ""): Form => ({
 
 function fromProduct(p: StoredProduct): Form {
   return {
+    i18n: { en: { ...emptyT(), ...p.i18n?.en }, ru: { ...emptyT(), ...p.i18n?.ru } },
     title: p.title, slug: p.slug, brandSlug: p.brandSlug, category: p.category, subtype: p.subtype ?? "", gender: p.gender,
     price: String(p.price), salePrice: p.salePrice ? String(p.salePrice) : "",
     hasOptions: !!p.option, stock: String(p.stock ?? 0), optionLabel: p.option?.label ?? "Ölçü",
@@ -74,6 +81,7 @@ function toPayload(f: Form) {
       : { stock: n(f.stock) }),
     tags: f.tags, material: f.material, color: f.color, description: f.description,
     specs: f.specs.filter((s) => s.label.trim() || s.value.trim()), images: f.images, active: f.active,
+    i18n: f.i18n,
   };
 }
 
@@ -310,6 +318,49 @@ export function ProductEditor({
                 </button>
               )}
             </div>
+          </fieldset>
+
+          <fieldset className="space-y-3">
+            <legend className="font-display text-[1.2rem] font-medium">Tərcümələr (könüllü)</legend>
+            <p className="text-xs text-muted">
+              İngilis və rus səhifələrində göstərilən mətn. Boş buraxılan xana Azərbaycan dilində görünür. Qiymət və stok bütün dillərdə eynidir.
+            </p>
+            {([
+              ["en", "English"],
+              ["ru", "Русский"],
+            ] as const).map(([lang, name]) => {
+              const t = f.i18n[lang];
+              const setT = (k: TextKey, v: string) => setF((s) => ({ ...s, i18n: { ...s.i18n, [lang]: { ...s.i18n[lang], [k]: v } } }));
+              return (
+                <details key={lang} className="rounded-xl border border-line bg-white/50 px-4 py-3" open={Object.values(t).some(Boolean)}>
+                  <summary className="cursor-pointer font-medium">{name}</summary>
+                  <div className="mt-4 space-y-4">
+                    <Field label={`Ad (${name})`}>
+                      <input className={inputCls} value={t.title} onChange={(e) => setT("title", e.target.value)} maxLength={120} lang={lang} />
+                    </Field>
+                    <Field label={`Təsvir (${name})`}>
+                      <textarea className={inputCls} rows={4} value={t.description} onChange={(e) => setT("description", e.target.value)} maxLength={1500} lang={lang} />
+                    </Field>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label={`Alt növ (${name})`}>
+                        <input className={inputCls} value={t.subtype} onChange={(e) => setT("subtype", e.target.value)} maxLength={40} lang={lang} />
+                      </Field>
+                      <Field label={`Material (${name})`}>
+                        <input className={inputCls} value={t.material} onChange={(e) => setT("material", e.target.value)} maxLength={120} lang={lang} />
+                      </Field>
+                      <Field label={`Rəng (${name})`}>
+                        <input className={inputCls} value={t.color} onChange={(e) => setT("color", e.target.value)} maxLength={60} lang={lang} />
+                      </Field>
+                      {f.hasOptions && (
+                        <Field label={`Variantın adı (${name})`} hint="Məsələn: Size, Volume">
+                          <input className={inputCls} value={t.optionLabel} onChange={(e) => setT("optionLabel", e.target.value)} maxLength={30} lang={lang} />
+                        </Field>
+                      )}
+                    </div>
+                  </div>
+                </details>
+              );
+            })}
           </fieldset>
 
           <fieldset className="space-y-3">

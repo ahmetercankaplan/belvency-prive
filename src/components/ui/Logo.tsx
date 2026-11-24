@@ -1,5 +1,9 @@
-import Link from "next/link";
+"use client";
+
+import Link from "@/i18n/link";
 import { site } from "@/data/site";
+import { fmt } from "@/i18n/config";
+import { useT } from "@/i18n/provider";
 
 /** Small arch outline — the house's window. */
 export function ArchMark({ className = "" }: { className?: string }) {
@@ -12,13 +16,15 @@ export function ArchMark({ className = "" }: { className?: string }) {
 }
 
 export function Logo({ tone = "dark", stacked = true }: { tone?: "dark" | "light"; stacked?: boolean }) {
+  const t = useT().chrome;
+  const aria = fmt(t.homeAria, { name: site.fullName });
   const light = tone === "light";
   const color = light ? "text-ivory" : "text-cocoa";
   const accent = light ? "text-champagne" : "text-gold-deep";
 
   if (!stacked) {
     return (
-      <Link href="/" aria-label={`${site.fullName} — ana səhifə`} className={`inline-flex items-center gap-2.5 ${color}`}>
+      <Link href="/" aria-label={aria} className={`inline-flex items-center gap-2.5 ${color}`}>
         <ArchMark className={`h-6 w-6 ${light ? "text-champagne" : "text-gold"}`} />
         <span className="font-display text-[1.3rem] font-medium leading-none tracking-[0.26em]">{site.name}</span>
         <span className={`font-display text-[1rem] italic leading-none ${accent}`}>{site.descriptor}</span>
@@ -27,7 +33,7 @@ export function Logo({ tone = "dark", stacked = true }: { tone?: "dark" | "light
   }
 
   return (
-    <Link href="/" aria-label={`${site.fullName} — ana səhifə`} className={`inline-flex flex-col items-center ${color}`}>
+    <Link href="/" aria-label={aria} className={`inline-flex flex-col items-center ${color}`}>
       <span className="pl-[0.26em] font-display text-[1.2rem] font-medium leading-none tracking-[0.26em] sm:text-[1.45rem] md:text-[1.6rem] md:tracking-[0.3em] md:pl-[0.3em]">
         {site.name}
       </span>

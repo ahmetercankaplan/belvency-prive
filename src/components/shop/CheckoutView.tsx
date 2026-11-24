@@ -1,16 +1,19 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { useState } from "react";
 import { Check, Info } from "lucide-react";
 import { GiftCardPreview } from "./GiftCardPreview";
-import { getProductById } from "@/data/products";
+import { useCatalog } from "@/i18n/use-catalog";
+import { fmt } from "@/i18n/config";
+import { useLocale, useT } from "@/i18n/provider";
 import { regions, site } from "@/data/site";
 import { priceFor } from "@/lib/catalog";
 import { live } from "@/lib/flags";
 import { formatAZN, formatAzPhone, parseAzPhone } from "@/lib/format";
 import { cartTotals, giftFee, shop, useHydrated, useShop } from "@/lib/shop-store";
 import type { CartLine } from "@/lib/types";
+import type { Dict } from "@/i18n/dict";
 import { ProductImage } from "@/components/ui/ProductImage";
 
 interface Values {
@@ -27,13 +30,13 @@ type Errors = Partial<Record<keyof Values, string>>;
 
 const INITIAL: Values = { name: "", surname: "", phone: "", email: "", region: "Bakı", address: "", note: "" };
 
-function validate(v: Values): Errors {
+function validate(v: Values, t: Dict["checkout"]): Errors {
   const e: Errors = {};
-  if (v.name.trim().length < 2) e.name = "Adınızı yazın";
-  if (v.surname.trim().length < 2) e.surname = "Soyadınızı yazın";
-  if (!parseAzPhone(v.phone)) e.phone = "Düzgün nömrə yazın, məsələn: 050 123 45 67";
-  if (v.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email.trim())) e.email = "E-poçt ünvanı düzgün deyil";
-  if (v.address.trim().length < 8) e.address = "Küçə, bina və mənzili göstərin";
+  if (v.name.trim().length < 2) e.name = t.errName;
+  if (v.surname.trim().length < 2) e.surname = t.errSurname;
+  if (!parseAzPhone(v.phone)) e.phone = t.errPhone;
+  if (v.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email.trim())) e.email = t.errEmail;
+  if (v.address.trim().length < 8) e.address = t.errAddress;
   return e;
 }
 
@@ -81,6 +84,9 @@ interface Placed {
 
 export function CheckoutView() {
   const hydrated = useHydrated();
+  const t = useT().checkout;
+  const locale = useLocale();
+  const { getProductById, regions: regionLabels } = useCatalog();
   const { cart, gift } = useShop();
   const [values, setValues] = useState<Values>(INITIAL);
   const [errors, setErrors] = useState<Errors>({});
@@ -98,11 +104,11 @@ export function CheckoutView() {
   const set = (k: keyof Values) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const next = { ...values, [k]: e.target.value };
     setValues(next);
-    if (touched[k]) setErrors(validate(next));
+    if (touched[k]) setErrors(validate(next, t));
   };
   const blur = (k: keyof Values) => () => {
     setTouched((t) => ({ ...t, [k]: true }));
-    setErrors(validate(values));
+    setErrors(validate(values, t));
   };
   const show = (k: keyof Values) => (touched[k] ? errors[k] : undefined);
   const aria = (k: keyof Values) => ({
@@ -114,7 +120,7 @@ export function CheckoutView() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errs = validate(values);
+    const errs = validate(values, t);
     setErrors(errs);
     setTouched({ name: true, surname: true, phone: true, email: true, address: true });
     const first = Object.keys(errs)[0];
@@ -146,19 +152,20 @@ export function CheckoutView() {
             },
             gift: { wrap: gift.wrap, message: gift.message.trim() },
             method: "cod",
+            lang: locale,
             website: (document.getElementById("website") as HTMLInputElement | null)?.value ?? "",
           }),
         });
         const data = (await res.json().catch(() => ({}))) as { id?: string; total?: number; error?: string };
         if (!res.ok || !data.id) {
-          setServerError(data.error || "Sifariş göndərilmədi. Bir az sonra yenidən cəhd edin və ya bizimlə əlaqə saxlayın.");
+          setServerError(res.status < 500 && data.error ? data.error : t.failed);
           setSending(false);
           return;
         }
         orderNumber = data.id;
         orderTotal = data.total ?? total;
       } catch {
-        setServerError("Bağlantı xətası. İnternetinizi yoxlayıb yenidən cəhd edin.");
+        setServerError(t.connection);
         setSending(false);
         return;
       }
@@ -177,7 +184,7 @@ export function CheckoutView() {
   };
 
   if (!hydrated) {
-    return <div className="skeleton mt-10 h-96" aria-busy="true" aria-label="Yüklənir" />;
+    return <div className="skeleton mt-10 h-96" aria-busy="true" aria-label={t.loading} />;
   }
 
   if (placed) {
@@ -186,31 +193,31 @@ export function CheckoutView() {
         <span className="grid h-12 w-12 place-items-center rounded-full bg-cocoa text-ivory">
           <Check className="h-5 w-5" aria-hidden="true" />
         </span>
-        <h2 className="t-h2 mt-6">{live ? "Sifarişiniz qəbul olundu" : "Nümayiş sifarişi qeyd olundu"}</h2>
+        <h2 className="t-h2 mt-6">{live ? t.doneTitleLive : t.doneTitleDemo}</h2>
         <p className="mt-3 text-muted">
           {live
-            ? `${placed.name}, təşəkkür edirik! Sifarişinizi təsdiqləmək üçün tezliklə ${placed.phone} nömrəsinə zəng edəcəyik. Ödəniş çatdırılma zamanı nağd edilir.`
-            : `${placed.name}, bu dizayn nümayişidir — real sifariş yaradılmadı, ödəniş götürülmədi və sizinlə əlaqə saxlanılmayacaq.`}
+            ? fmt(t.doneTextLive, { name: placed.name, phone: placed.phone })
+            : fmt(t.doneTextDemo, { name: placed.name })}
         </p>
         <dl className="mt-6 grid max-w-sm grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[0.95rem]">
-          <dt className="text-muted">{live ? "Sifariş nömrəsi" : "Nümayiş kodu"}</dt>
+          <dt className="text-muted">{live ? t.orderNumber : t.demoCode}</dt>
           <dd className="font-medium">{placed.number}</dd>
-          <dt className="text-muted">Telefon</dt>
+          <dt className="text-muted">{t.phone}</dt>
           <dd>{placed.phone}</dd>
-          <dt className="text-muted">Məhsul sayı</dt>
+          <dt className="text-muted">{t.itemCount}</dt>
           <dd>{placed.lines.reduce((s, l) => s + l.qty, 0)}</dd>
           {placed.wrapped && (
             <>
-              <dt className="text-muted">Qablaşdırma</dt>
-              <dd>Hədiyyə qablaşdırması</dd>
+              <dt className="text-muted">{t.packaging}</dt>
+              <dd>{t.giftWrap}</dd>
             </>
           )}
-          <dt className="text-muted">Cəmi</dt>
+          <dt className="text-muted">{t.total}</dt>
           <dd className="font-medium">{formatAZN(placed.total)}</dd>
         </dl>
         {placed.message && (
           <div className="mt-8">
-            <p className="text-sm text-muted">Hədiyyə kartı</p>
+            <p className="text-sm text-muted">{t.giftCard}</p>
             <div className="mt-3">
               <GiftCardPreview message={placed.message} />
             </div>
@@ -218,10 +225,10 @@ export function CheckoutView() {
         )}
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/kataloq" className="btn btn-primary">
-            Alış-verişə davam et
+            {t.keepShopping}
           </Link>
           <Link href="/" className="btn btn-ghost">
-            Ana səhifə
+            {t.home}
           </Link>
         </div>
       </div>
@@ -231,10 +238,10 @@ export function CheckoutView() {
   if (cart.length === 0) {
     return (
       <div className="mt-10 rounded-sm bg-linen px-6 py-20 text-center md:py-28">
-        <p className="t-h2">Sifariş üçün məhsul yoxdur</p>
-        <p className="mx-auto mt-3 max-w-[40ch] text-muted">Əvvəlcə səbətə məhsul əlavə edin.</p>
+        <p className="t-h2">{t.noItemsTitle}</p>
+        <p className="mx-auto mt-3 max-w-[40ch] text-muted">{t.noItemsText}</p>
         <Link href="/kataloq" className="btn btn-primary mt-8">
-          Kataloqa keç
+          {t.toCatalog}
         </Link>
       </div>
     );
@@ -247,26 +254,27 @@ export function CheckoutView() {
           <div className="flex gap-3 border border-sand bg-champagne/30 p-4 text-sm">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-gold-deep" aria-hidden="true" />
             <p>
-              <strong className="font-medium">Nümayiş rejimi.</strong> Bu forma real sifariş yaratmır və kart ödənişi götürmür.
+              <strong className="font-medium">{t.demoBoxTitle}</strong>
+              {t.demoBoxText}
             </p>
           </div>
         )}
         {/* honeypot: real visitors never see or fill this */}
         <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
-          <label htmlFor="website">Veb sayt</label>
+          <label htmlFor="website">{t.honeypot}</label>
           <input id="website" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
         </div>
 
         <fieldset>
-          <legend className="t-h3">Əlaqə məlumatları</legend>
+          <legend className="t-h3">{t.contact}</legend>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <Field id="name" label="Ad" error={show("name")}>
+            <Field id="name" label={t.firstName} error={show("name")}>
               <input id="name" autoComplete="given-name" value={values.name} className="field" {...aria("name")} />
             </Field>
-            <Field id="surname" label="Soyad" error={show("surname")}>
+            <Field id="surname" label={t.lastName} error={show("surname")}>
               <input id="surname" autoComplete="family-name" value={values.surname} className="field" {...aria("surname")} />
             </Field>
-            <Field id="phone" label="Mobil nömrə" error={show("phone")} hint="Operator kodu ilə: 050, 051, 055, 070, 077, 099">
+            <Field id="phone" label={t.mobile} error={show("phone")} hint={t.mobileHint}>
               <input
                 id="phone"
                 type="tel"
@@ -278,30 +286,32 @@ export function CheckoutView() {
                 {...aria("phone")}
               />
             </Field>
-            <Field id="email" label="E-poçt (könüllü)" error={show("email")}>
+            <Field id="email" label={t.emailOptional} error={show("email")}>
               <input id="email" type="email" autoComplete="email" value={values.email} className="field" {...aria("email")} />
             </Field>
           </div>
         </fieldset>
 
         <fieldset>
-          <legend className="t-h3">Çatdırılma</legend>
+          <legend className="t-h3">{t.delivery}</legend>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <Field id="region" label="Şəhər / rayon">
+            <Field id="region" label={t.region}>
               <select id="region" value={values.region} onChange={set("region")} className="field">
-                {regions.map((r) => (
-                  <option key={r}>{r}</option>
+                {regions.map((r, i) => (
+                  <option key={r} value={r}>
+                    {regionLabels[i] ?? r}
+                  </option>
                 ))}
               </select>
             </Field>
             <div className="hidden sm:block" />
             <div className="sm:col-span-2">
-              <Field id="address" label="Ünvan" error={show("address")}>
+              <Field id="address" label={t.address} error={show("address")}>
                 <input id="address" autoComplete="street-address" value={values.address} className="field" {...aria("address")} />
               </Field>
             </div>
             <div className="sm:col-span-2">
-              <Field id="note" label="Kuryer üçün qeyd (könüllü)">
+              <Field id="note" label={t.note}>
                 <textarea id="note" rows={3} value={values.note} onChange={set("note")} className="field" />
               </Field>
             </div>
@@ -309,18 +319,18 @@ export function CheckoutView() {
         </fieldset>
 
         <fieldset>
-          <legend className="t-h3">Ödəniş</legend>
+          <legend className="t-h3">{t.payment}</legend>
           <div className="mt-5 space-y-3">
             <label className="flex min-h-14 cursor-pointer items-center gap-3 border border-cocoa px-4">
               <input type="radio" name="pay" defaultChecked className="h-4 w-4 accent-[#7b1d3a]" />
-              Çatdırılma zamanı nağd ödəniş
+              {t.cod}
             </label>
             <label className="flex min-h-14 items-center justify-between gap-3 border border-line px-4 text-muted" aria-disabled="true">
               <span className="flex items-center gap-3">
                 <input type="radio" name="pay" disabled className="h-4 w-4" />
-                Bank kartı ilə onlayn ödəniş
+                {t.card}
               </span>
-              <span className="text-xs">növbəti mərhələdə</span>
+              <span className="text-xs">{t.cardSoon}</span>
             </label>
           </div>
         </fieldset>
@@ -332,28 +342,28 @@ export function CheckoutView() {
         )}
         {live && (
           <p className="text-[0.85rem] leading-relaxed text-muted">
-            Sifarişi təsdiqləməklə{" "}
+            {t.consentBefore}
             <Link href="/sertler" className="underline underline-offset-4" target="_blank">
-              satış şərtləri
+              {t.consentTerms}
             </Link>
-            ,{" "}
+            {t.consentMid1}
             <Link href="/qaytarma" className="underline underline-offset-4" target="_blank">
-              qaytarma qaydaları
-            </Link>{" "}
-            ilə razılaşır və{" "}
+              {t.consentReturns}
+            </Link>
+            {t.consentMid2}
             <Link href="/mexfilik" className="underline underline-offset-4" target="_blank">
-              məxfilik siyasətinə
-            </Link>{" "}
-            uyğun olaraq məlumatlarınızın işlənməsinə razılıq verirsiniz.
+              {t.consentPrivacy}
+            </Link>
+            {t.consentAfter}
           </p>
         )}
         <button type="submit" disabled={sending} className="btn btn-primary w-full sm:w-auto sm:min-w-72 disabled:opacity-60">
-          {live ? (sending ? "Göndərilir…" : "Sifarişi təsdiqlə") : "Nümayiş sifarişini göndər"}
+          {live ? (sending ? t.sending : t.confirm) : t.sendDemo}
         </button>
       </form>
 
-      <aside className="bg-linen p-6 lg:sticky lg:top-28 md:p-8" aria-label="Sifarişin xülasəsi">
-        <h2 className="t-h3">Sifariş</h2>
+      <aside className="bg-linen p-6 lg:sticky lg:top-28 md:p-8" aria-label={t.summaryAria}>
+        <h2 className="t-h3">{t.summary}</h2>
         <ul className="mt-5 divide-y divide-sand/60">
           {cart.map((line) => {
             const p = getProductById(line.id);
@@ -368,7 +378,7 @@ export function CheckoutView() {
                   <span className="block font-medium leading-snug">{p.title}</span>
                   <span className="text-muted">
                     {line.option ? `${line.option} · ` : ""}
-                    {line.qty} ədəd
+                    {fmt(t.qty, { n: line.qty })}
                   </span>
                 </span>
                 <span className="text-sm font-medium">{formatAZN(pr.current * line.qty)}</span>
@@ -378,27 +388,27 @@ export function CheckoutView() {
         </ul>
         <dl className="mt-4 space-y-2.5 border-t border-sand pt-4 text-[0.95rem]">
           <div className="flex justify-between">
-            <dt>Ara cəm</dt>
+            <dt>{t.subtotal}</dt>
             <dd>{formatAZN(subtotal)}</dd>
           </div>
           {savings > 0 && (
             <div className="flex justify-between text-garnet-bright">
-              <dt>Qənaət</dt>
+              <dt>{t.savings}</dt>
               <dd>{formatAZN(savings)}</dd>
             </div>
           )}
           <div className="flex justify-between">
-            <dt>Çatdırılma</dt>
-            <dd>{delivery === 0 ? "Pulsuz" : formatAZN(delivery)}</dd>
+            <dt>{t.deliveryFee}</dt>
+            <dd>{delivery === 0 ? t.free : formatAZN(delivery)}</dd>
           </div>
           {fee > 0 && (
             <div className="flex justify-between">
-              <dt>Hədiyyə qablaşdırması</dt>
+              <dt>{t.giftWrap}</dt>
               <dd>{formatAZN(fee)}</dd>
             </div>
           )}
           <div className="flex items-baseline justify-between border-t border-sand pt-3 text-lg font-medium">
-            <dt>Cəmi</dt>
+            <dt>{t.total}</dt>
             <dd className="text-2xl">{formatAZN(total)}</dd>
           </div>
         </dl>

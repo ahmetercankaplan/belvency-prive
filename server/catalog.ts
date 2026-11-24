@@ -1,6 +1,6 @@
 import { categories } from "../src/data/categories.ts";
 import { hasStock } from "../src/lib/pricing.ts";
-import type { Brand, Gender, Product, ProductOption, Tag, Tone } from "../src/lib/types.ts";
+import type { Brand, BrandI18n, Gender, Product, ProductI18n, ProductOption, Tag, Tone, TranslatedLocale } from "../src/lib/types.ts";
 import { fail, num, oneOf, randomId, slugify, str } from "./http.ts";
 import type { Store } from "./store.ts";
 
@@ -30,6 +30,28 @@ export async function listBrands(store: Store): Promise<Brand[]> {
   const all = await Promise.all(keys.map((k) => store.get<Brand>(k)));
   return all.filter((b): b is Brand => !!b).sort((a, b) => a.name.localeCompare(b.name, "az"));
 }
+
+const TRANSLATED = ["en", "ru"] as const satisfies readonly TranslatedLocale[];
+
+/** Optional English / Russian wording. Only filled-in fields are kept; the page falls back to Azerbaijani for the rest. */
+function parseTranslations<T extends Record<string, number>>(raw: unknown, fields: T): Partial<Record<TranslatedLocale, Partial<Record<keyof T, string>>>> | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== "object") fail(400, "Tərcümə məlumatı yanlışdır");
+  const out: Partial<Record<TranslatedLocale, Partial<Record<keyof T, string>>>> = {};
+  for (const lang of TRANSLATED) {
+    const src = ((raw as Record<string, unknown>)[lang] ?? {}) as Record<string, unknown>;
+    const entry: Partial<Record<keyof T, string>> = {};
+    for (const [key, max] of Object.entries(fields)) {
+      const v = str(src[key], `${lang.toUpperCase()}: ${key}`, { max, optional: true });
+      if (v) entry[key as keyof T] = v;
+    }
+    if (Object.keys(entry).length) out[lang] = entry;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+const PRODUCT_I18N_FIELDS = { title: 120, description: 1500, optionLabel: 30, material: 120, color: 60, subtype: 40 } satisfies Record<keyof ProductI18n, number>;
+const BRAND_I18N_FIELDS = { specialty: 60, blurb: 300 } satisfies Record<keyof BrandI18n, number>;
 
 function parseOption(raw: unknown): ProductOption | undefined {
   if (raw === undefined || raw === null) return undefined;
@@ -87,6 +109,7 @@ export function parseProductInput(raw: Record<string, unknown>, brandSlugs: Set<
   const subtype = str(raw.subtype, "Alt növ", { max: 40, optional: true });
   const material = str(raw.material, "Material", { max: 120, optional: true });
   const color = str(raw.color, "Rəng", { max: 60, optional: true });
+  const i18n = parseTranslations(raw.i18n, PRODUCT_I18N_FIELDS);
 
   const base: Omit<StoredProduct, "id" | "createdAt" | "updatedAt" | "rank" | "added" | "inStock"> = {
     slug: "", // set by caller (needs uniqueness check)
@@ -108,6 +131,7 @@ export function parseProductInput(raw: Record<string, unknown>, brandSlugs: Set<
     images,
     description: str(raw.description, "Təsvir", { max: 1500, optional: true }),
     specs,
+    ...(i18n ? { i18n } : {}),
     active: raw.active === undefined ? true : raw.active === true,
   };
   const slugInput = str(raw.slug, "Slug", { max: 80, optional: true });
@@ -150,6 +174,7 @@ export function parseBrandInput(raw: Record<string, unknown>, existingSlug?: str
   const name = str(raw.name, "Brend adı", { min: 2, max: 60 });
   const slug = existingSlug ?? slugify(str(raw.slug, "Slug", { max: 60, optional: true }) || name);
   if (!slug) fail(400, "Slug yaradıla bilmədi");
+  const i18n = parseTranslations(raw.i18n, BRAND_I18N_FIELDS);
   return {
     slug,
     name,
@@ -157,6 +182,7 @@ export function parseBrandInput(raw: Record<string, unknown>, existingSlug?: str
     blurb: str(raw.blurb, "Təsvir", { max: 300, optional: true }),
     tone: raw.tone ? oneOf(raw.tone, "Rəng tonu", TONES) : "blush",
     kind: "perfume",
+    ...(i18n ? { i18n } : {}),
   };
 }
 

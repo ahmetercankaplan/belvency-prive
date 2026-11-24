@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { useEffect, useRef } from "react";
 import { formatAZN } from "@/lib/format";
+import { useT } from "@/i18n/provider";
 
 interface Props {
   featured: { href: string; title: string; price: number };
@@ -14,6 +15,7 @@ interface Props {
  * The three layers drift at different depths with the pointer.
  */
 export function HeroArches({ featured }: Props) {
+  const t = useT().home.hero;
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,12 +44,12 @@ export function HeroArches({ featured }: Props) {
     >
       {/* main arch */}
       <div className="parallax" style={{ "--depth": 12 } as React.CSSProperties}>
-        <Link href="/kataloq/zerger" className="group block" aria-label="Zərgərlik kolleksiyası">
+        <Link href="/kataloq/zerger" className="group block" aria-label={t.jewelryAria}>
           <span className="arch-ring block">
             <span className="arch anim-arch relative block aspect-[11/15]" style={{ animationDelay: "0.1s" }}>
               <Image
                 src="/images/jewelry-model.jpg"
-                alt="Boynunda incə qızıl boyunbağılar, əlində üzüklər və qolbaq taxmış model"
+                alt={t.jewelryAlt}
                 fill
                 priority
                 sizes="(min-width: 1024px) 28rem, 70vw"
@@ -64,14 +66,14 @@ export function HeroArches({ featured }: Props) {
         className="parallax absolute -left-[17%] bottom-[9%] w-[38%]"
         style={{ "--depth": 26 } as React.CSSProperties}
       >
-        <Link href="/kataloq/makiyaj" className="group block" aria-label="Makiyaj kolleksiyası">
+        <Link href="/kataloq/makiyaj" className="group block" aria-label={t.makeupAria}>
           <span
             className="anim-scale relative block aspect-square overflow-hidden rounded-full shadow-[0_0_0_6px_var(--color-garnet),0_0_0_7px_var(--color-gold),0_18px_40px_-12px_rgba(0,0,0,0.45)]"
             style={{ animationDelay: "0.7s" }}
           >
             <Image
               src="/images/lipstick-white.jpg"
-              alt="Ağ fonda açıq çəhrayı dodaq boyası və qapağı"
+              alt={t.makeupAlt}
               fill
               sizes="(min-width: 1024px) 10rem, 28vw"
               className="object-cover transition-transform duration-[1200ms] ease-[var(--ease-soft)] group-hover:scale-110"

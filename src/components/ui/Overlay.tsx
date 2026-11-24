@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { useT } from "@/i18n/provider";
 
 type Side = "right" | "left" | "bottom" | "top";
 
@@ -29,6 +30,7 @@ const PANEL: Record<Side, string> = {
 /** Accessible modal panel: focus trap, Escape, scroll lock, focus return. */
 export function Overlay({ open, onClose, label, side = "right", children, className = "", hideClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeLabel = useT().chrome.close;
 
   useEffect(() => {
     if (!open) return;
@@ -85,7 +87,7 @@ export function Overlay({ open, onClose, label, side = "right", children, classN
           <button
             type="button"
             onClick={onClose}
-            aria-label="Bağla"
+            aria-label={closeLabel}
             className="absolute right-3 top-3 z-10 grid h-11 w-11 place-items-center rounded-full text-cocoa transition-colors hover:bg-linen"
           >
             <X className="h-5 w-5" aria-hidden="true" />

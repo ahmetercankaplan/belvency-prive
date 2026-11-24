@@ -22,13 +22,23 @@ export const seller = {
   address: "",
   phone: "",
   email: "",
-  hours: "Hər gün 10:00 – 20:00",
+  /** İş saatları (hər gün) */
+  hoursFrom: "10:00",
+  hoursTo: "20:00",
 };
+
+const HOURS = { az: "Hər gün {from} – {to}", en: "Daily {from} – {to}", ru: "Ежедневно {from} – {to}" } as const;
+
+/** Çalışma saatları, dilə uyğun mətn. */
+export const sellerHours = (locale: "az" | "en" | "ru") =>
+  HOURS[locale].replace("{from}", seller.hoursFrom).replace("{to}", seller.hoursTo);
 
 /** Çatdırılma müddətləri — real kuryer razılaşmasına görə dəyişin. */
 export const delivery = {
-  bakuDays: "1–2 iş günü",
-  regionDays: "2–5 iş günü",
+  bakuMin: 1,
+  bakuMax: 2,
+  regionMin: 2,
+  regionMax: 5,
 };
 
 /** Qaytarma şərtləri — təsdiqləyin və ya dəyişin. */
@@ -38,10 +48,11 @@ export const returns = {
   /** Pulun geri qaytarılma müddəti (iş günü) */
   refundBusinessDays: 10,
   /** Keyfiyyətli məhsulun qaytarılmasında çatdırılma xərcini kim ödəyir */
-  returnShippingPaidBy: "alıcı",
+  returnShippingPaidBy: "buyer" as "buyer" | "seller",
 };
 
-export const legalUpdated = "24 noyabr 2026";
+/** Hüquqi mətnlərin son yenilənmə tarixi (YYYY-MM-DD) */
+export const legalUpdated = "2026-11-24";
 
 export const REQUIRED = ["name", "form", "voen", "address", "phone", "email"] as const;
 

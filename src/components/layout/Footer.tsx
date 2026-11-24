@@ -1,60 +1,65 @@
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { Logo } from "@/components/ui/Logo";
 import { site } from "@/data/site";
 import { live } from "@/lib/flags";
+import { getDict } from "@/i18n/dict";
+import { fmt, type Locale } from "@/i18n/config";
+import { sellerHours } from "@/data/legal";
 
-const cols = [
-  {
-    title: "Alış-veriş",
-    links: [
-      { href: "/qadin", label: "Qadın" },
-      { href: "/kisi", label: "Kişi" },
-      { href: "/brendler", label: "Brendlər" },
-      { href: "/kataloq/yeni-gelenler", label: "Yeni gələnlər" },
-      { href: "/kataloq/hediyye-secimleri", label: "Hədiyyə seçimləri" },
-      { href: "/hediyye-sihirbazi", label: "Hədiyyə sihirbazı" },
-      ...(live ? [] : [{ href: "/etir-tapici", label: "Ətir tapıcı" }, { href: "/lookbook", label: "Lookbook" }]),
-    ],
-  },
-  {
-    title: "Kolleksiyalar",
-    links: [
-      { href: "/kataloq/etirler", label: "Ətirlər" },
-      { href: "/kataloq/bilezikler", label: "Qolbaqlar" },
-      { href: "/kataloq/cantalar", label: "Çantalar" },
-      { href: "/kataloq/saatlar", label: "Saatlar" },
-      { href: "/kataloq/ekskluziv-kolleksiya", label: "Eksklüziv kolleksiya" },
-    ],
-  },
-  {
-    title: "Məlumat",
-    links: [
-      { href: "/catdirilma", label: "Çatdırılma və ödəniş" },
-      { href: "/qaytarma", label: "Qaytarma və dəyişdirmə" },
-      { href: "/sertler", label: "Satış şərtləri" },
-      { href: "/mexfilik", label: "Məxfilik siyasəti" },
-      { href: "/elaqe", label: "Əlaqə" },
-    ],
-  },
-  {
-    title: "Hesabım",
-    links: [
-      { href: "/sevimliler", label: "Sevimlilər" },
-      { href: "/sebet", label: "Səbət" },
-      { href: "/odenis", label: "Sifarişi rəsmiləşdir" },
-      { href: "/haqqimizda", label: "Hekayəmiz" },
-    ],
-  },
-];
+export function Footer({ locale }: { locale: Locale }) {
+  const d = getDict(locale).chrome;
+  const l = d.footer.links;
+  const cols = [
+    {
+      title: d.footer.cols.shop,
+      links: [
+        { href: "/qadin", label: l.women },
+        { href: "/kisi", label: l.men },
+        { href: "/brendler", label: l.brands },
+        { href: "/kataloq/yeni-gelenler", label: l.newArrivals },
+        { href: "/kataloq/hediyye-secimleri", label: l.giftPicks },
+        { href: "/hediyye-sihirbazi", label: l.giftWizard },
+        ...(live ? [] : [{ href: "/etir-tapici", label: l.scentFinder }, { href: "/lookbook", label: l.lookbook }]),
+      ],
+    },
+    {
+      title: d.footer.cols.collections,
+      links: [
+        { href: "/kataloq/etirler", label: l.perfumes },
+        { href: "/kataloq/bilezikler", label: l.bracelets },
+        { href: "/kataloq/cantalar", label: l.bags },
+        { href: "/kataloq/saatlar", label: l.watches },
+        { href: "/kataloq/ekskluziv-kolleksiya", label: l.exclusive },
+      ],
+    },
+    {
+      title: d.footer.cols.info,
+      links: [
+        { href: "/catdirilma", label: l.delivery },
+        { href: "/qaytarma", label: l.returns },
+        { href: "/sertler", label: l.terms },
+        { href: "/mexfilik", label: l.privacy },
+        { href: "/elaqe", label: l.contact },
+      ],
+    },
+    {
+      title: d.footer.cols.account,
+      links: [
+        { href: "/sevimliler", label: l.wishlist },
+        { href: "/sebet", label: l.cart },
+        { href: "/odenis", label: l.checkout },
+        { href: "/haqqimizda", label: l.about },
+      ],
+    },
+  ];
 
-export function Footer() {
   return (
     <footer className="on-dark bg-garnet-deep text-ivory">
       <div className="container-x grid gap-14 py-16 md:grid-cols-12 md:py-20">
         <div className="md:col-span-4">
           <Logo tone="light" />
           <p className="mt-6 max-w-[30ch] font-display text-2xl font-light leading-snug text-champagne">
-            {site.tagline}.
+            {fmt(d.footer.taglineDot, { tagline: d.tagline })}
           </p>
           <address className="mt-8 space-y-1 text-[0.9rem] not-italic text-ivory/80">
             {site.supportPhone && (
@@ -71,7 +76,7 @@ export function Footer() {
                 </a>
               </p>
             )}
-            <p>{site.hours}</p>
+            <p>{sellerHours(locale)}</p>
           </address>
         </div>
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4 md:col-span-8 md:pl-10">
@@ -79,10 +84,10 @@ export function Footer() {
             <nav key={c.title} aria-label={c.title}>
               <p className="font-display text-xl text-champagne">{c.title}</p>
               <ul className="mt-4 space-y-1">
-                {c.links.map((l) => (
-                  <li key={l.href}>
-                    <Link href={l.href} className="inline-block py-1.5 text-[0.92rem] text-ivory/80 transition-colors hover:text-ivory">
-                      {l.label}
+                {c.links.map((x) => (
+                  <li key={x.href}>
+                    <Link href={x.href} className="inline-block py-1.5 text-[0.92rem] text-ivory/80 transition-colors hover:text-ivory">
+                      {x.label}
                     </Link>
                   </li>
                 ))}
@@ -93,14 +98,14 @@ export function Footer() {
       </div>
       <div className="border-t border-ivory/15">
         <div className="container-x flex flex-col gap-3 py-6 text-[0.8rem] text-ivory/65 md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} Belvency Privé. Bütün hüquqlar qorunur.</p>
+          <p>{fmt(d.footer.rights, { year: new Date().getFullYear() })}</p>
           <p className="max-w-[60ch] md:text-right">
-            {!live && "Bu sayt dizayn nümayişidir: məhsullar, brendlər və qiymətlər uydurmadır, real ödəniş və ya sifariş qəbul edilmir. "}
-            Ana səhifədəki fotoqrafiyalar{" "}
+            {!live && d.footer.demo}
+            {d.footer.photosBefore}
             <a href="https://unsplash.com/license" className="underline underline-offset-4 hover:text-ivory" rel="noopener noreferrer">
-              Unsplash lisenziyası
-            </a>{" "}
-            ilə istifadə olunur.
+              {d.footer.photosLink}
+            </a>
+            {d.footer.photosAfter}
           </p>
         </div>
       </div>

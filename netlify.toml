@@ -16,6 +16,194 @@
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
   NEXT_TELEMETRY_DISABLED = "1"
 
+# ── Languages ─────────────────────────────────────────────────────────────
+# The shop lives under /az, /en and /ru. "/" sends Russian-language browsers to /ru and everyone else to /az
+# (visitors can switch language in the header). force = true because the exported site also has a "/" page.
+[[redirects]]
+  from = "/"
+  to = "/ru"
+  status = 302
+  force = true
+  conditions = { Language = ["ru"] }
+
+[[redirects]]
+  from = "/"
+  to = "/az"
+  status = 302
+  force = true
+
+# Addresses from before the language prefixes existed keep working (they open the Azerbaijani page).
+[[redirects]]
+  from = "/kataloq"
+  to = "/az/kataloq"
+  status = 301
+
+[[redirects]]
+  from = "/kataloq/*"
+  to = "/az/kataloq/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/mehsul"
+  to = "/az/mehsul"
+  status = 301
+
+[[redirects]]
+  from = "/mehsul/*"
+  to = "/az/mehsul/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/brendler"
+  to = "/az/brendler"
+  status = 301
+
+[[redirects]]
+  from = "/brendler/*"
+  to = "/az/brendler/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/qadin"
+  to = "/az/qadin"
+  status = 301
+
+[[redirects]]
+  from = "/qadin/*"
+  to = "/az/qadin/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/kisi"
+  to = "/az/kisi"
+  status = 301
+
+[[redirects]]
+  from = "/kisi/*"
+  to = "/az/kisi/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/sebet"
+  to = "/az/sebet"
+  status = 301
+
+[[redirects]]
+  from = "/sebet/*"
+  to = "/az/sebet/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/odenis"
+  to = "/az/odenis"
+  status = 301
+
+[[redirects]]
+  from = "/odenis/*"
+  to = "/az/odenis/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/sevimliler"
+  to = "/az/sevimliler"
+  status = 301
+
+[[redirects]]
+  from = "/sevimliler/*"
+  to = "/az/sevimliler/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/hediyye-sihirbazi"
+  to = "/az/hediyye-sihirbazi"
+  status = 301
+
+[[redirects]]
+  from = "/hediyye-sihirbazi/*"
+  to = "/az/hediyye-sihirbazi/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/etir-tapici"
+  to = "/az/etir-tapici"
+  status = 301
+
+[[redirects]]
+  from = "/etir-tapici/*"
+  to = "/az/etir-tapici/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/lookbook"
+  to = "/az/lookbook"
+  status = 301
+
+[[redirects]]
+  from = "/lookbook/*"
+  to = "/az/lookbook/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/haqqimizda"
+  to = "/az/haqqimizda"
+  status = 301
+
+[[redirects]]
+  from = "/haqqimizda/*"
+  to = "/az/haqqimizda/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/sertler"
+  to = "/az/sertler"
+  status = 301
+
+[[redirects]]
+  from = "/sertler/*"
+  to = "/az/sertler/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/mexfilik"
+  to = "/az/mexfilik"
+  status = 301
+
+[[redirects]]
+  from = "/mexfilik/*"
+  to = "/az/mexfilik/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/catdirilma"
+  to = "/az/catdirilma"
+  status = 301
+
+[[redirects]]
+  from = "/catdirilma/*"
+  to = "/az/catdirilma/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/qaytarma"
+  to = "/az/qaytarma"
+  status = 301
+
+[[redirects]]
+  from = "/qaytarma/*"
+  to = "/az/qaytarma/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/elaqe"
+  to = "/az/elaqe"
+  status = 301
+
+[[redirects]]
+  from = "/elaqe/*"
+  to = "/az/elaqe/:splat"
+  status = 301
+
+
 [functions]
   node_bundler = "esbuild"
 

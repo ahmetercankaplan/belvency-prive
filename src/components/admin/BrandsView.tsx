@@ -5,7 +5,8 @@ import type { Brand } from "@/lib/types";
 import { ApiError, api, useApi } from "./api";
 import { Card, Field, Notice, inputCls } from "./ui";
 
-const EMPTY = { name: "", specialty: "", blurb: "" };
+const T_EMPTY = { specialty: "", blurb: "" };
+const EMPTY = { name: "", specialty: "", blurb: "", i18n: { en: { ...T_EMPTY }, ru: { ...T_EMPTY } } };
 
 export function BrandsView() {
   const { data, error, loading, reload } = useApi<{ brands: Brand[] }>("/api/admin/brands");
@@ -63,7 +64,7 @@ export function BrandsView() {
                   <button
                     type="button"
                     className="min-h-10 rounded-lg px-3 text-sm hover:bg-linen"
-                    onClick={() => { setEditing(b.slug); setForm({ name: b.name, specialty: b.specialty, blurb: b.blurb }); setMsg(null); }}
+                    onClick={() => { setEditing(b.slug); setForm({ name: b.name, specialty: b.specialty, blurb: b.blurb, i18n: { en: { ...T_EMPTY, ...b.i18n?.en }, ru: { ...T_EMPTY, ...b.i18n?.ru } } }); setMsg(null); }}
                   >
                     Redaktə
                   </button>
@@ -87,6 +88,26 @@ export function BrandsView() {
             <Field label="Qısa təsvir">
               <textarea className={inputCls} rows={3} value={form.blurb} onChange={(e) => setForm({ ...form, blurb: e.target.value })} maxLength={300} />
             </Field>
+            {([
+              ["en", "English"],
+              ["ru", "Русский"],
+            ] as const).map(([lang, name]) => {
+              const t = form.i18n[lang];
+              const setT = (k: "specialty" | "blurb", v: string) => setForm({ ...form, i18n: { ...form.i18n, [lang]: { ...t, [k]: v } } });
+              return (
+                <details key={lang} className="rounded-xl border border-line bg-white/50 px-4 py-3" open={!!(t.specialty || t.blurb)}>
+                  <summary className="cursor-pointer text-sm font-medium">{name} (könüllü)</summary>
+                  <div className="mt-3 space-y-3">
+                    <Field label={`İxtisas (${name})`}>
+                      <input className={inputCls} value={t.specialty} onChange={(e) => setT("specialty", e.target.value)} maxLength={60} lang={lang} />
+                    </Field>
+                    <Field label={`Qısa təsvir (${name})`}>
+                      <textarea className={inputCls} rows={3} value={t.blurb} onChange={(e) => setT("blurb", e.target.value)} maxLength={300} lang={lang} />
+                    </Field>
+                  </div>
+                </details>
+              );
+            })}
             {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
             <div className="flex gap-3">
               <button type="submit" disabled={busy || !form.name.trim()} className="btn btn-primary">{editing ? "Yadda saxla" : "Brend əlavə et"}</button>

@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/i18n/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Overlay } from "@/components/ui/Overlay";
-import { getBrand } from "@/data/brands";
-import { getProductById } from "@/data/products";
 import { site } from "@/data/site";
+import { fmt } from "@/i18n/config";
+import { useCatalog } from "@/i18n/use-catalog";
+import { useT } from "@/i18n/provider";
 import { priceFor } from "@/lib/catalog";
 import { formatAZN } from "@/lib/format";
 import { cartTotals, shop, useShop } from "@/lib/shop-store";
@@ -15,6 +16,8 @@ import { ProductImage } from "@/components/ui/ProductImage";
 export function CartLines({ compact = false }: { compact?: boolean }) {
   const { cart } = useShop();
   const { closePanel } = useUI();
+  const t = useT().chrome.cart;
+  const { getProductById, getBrand } = useCatalog();
 
   return (
     <ul className="divide-y divide-line">
@@ -44,10 +47,10 @@ export function CartLines({ compact = false }: { compact?: boolean }) {
                 </p>
               )}
               <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-                <div className="flex items-center rounded-full border border-sand" role="group" aria-label={`${p.title} sayı`}>
+                <div className="flex items-center rounded-full border border-sand" role="group" aria-label={fmt(t.lineQty, { title: p.title })}>
                   <button
                     type="button"
-                    aria-label="Sayı azalt"
+                    aria-label={t.less}
                     onClick={() => shop.setQty(line.id, line.option, line.qty - 1)}
                     className="grid h-10 w-10 place-items-center rounded-full hover:bg-linen"
                   >
@@ -58,7 +61,7 @@ export function CartLines({ compact = false }: { compact?: boolean }) {
                   </span>
                   <button
                     type="button"
-                    aria-label="Sayı artır"
+                    aria-label={t.more}
                     disabled={line.qty >= 10}
                     onClick={() => shop.setQty(line.id, line.option, line.qty + 1)}
                     className="grid h-10 w-10 place-items-center rounded-full hover:bg-linen disabled:opacity-40"
@@ -74,7 +77,7 @@ export function CartLines({ compact = false }: { compact?: boolean }) {
                     className="mt-0.5 inline-flex min-h-8 items-center gap-1 text-[0.8rem] text-muted hover:text-cocoa"
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    Çıxar
+                    {t.remove}
                   </button>
                 </div>
               </div>
@@ -87,6 +90,7 @@ export function CartLines({ compact = false }: { compact?: boolean }) {
 }
 
 export function DeliveryProgress({ subtotal }: { subtotal: number }) {
+  const t = useT().chrome.cart;
   const left = Math.max(0, site.freeDeliveryFrom - subtotal);
   const pct = Math.min(100, (subtotal / site.freeDeliveryFrom) * 100);
   return (
@@ -94,10 +98,12 @@ export function DeliveryProgress({ subtotal }: { subtotal: number }) {
       <p className="text-sm">
         {left > 0 ? (
           <>
-            Pulsuz çatdırılmaya <strong className="font-medium">{formatAZN(left)}</strong> qalıb
+            {t.freeLeft.split("{amount}")[0]}
+            <strong className="font-medium">{formatAZN(left)}</strong>
+            {t.freeLeft.split("{amount}")[1]}
           </>
         ) : (
-          "Sifarişiniz üçün çatdırılma pulsuzdur"
+          t.freeReached
         )}
       </p>
       <div
@@ -106,7 +112,7 @@ export function DeliveryProgress({ subtotal }: { subtotal: number }) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(pct)}
-        aria-label="Pulsuz çatdırılmaya qalan məbləğ"
+        aria-label={t.freeAria}
       >
         <div className="h-full rounded-full bg-gold transition-[width] duration-700 ease-[var(--ease-soft)]" style={{ width: `${pct}%` }} />
       </div>
@@ -118,24 +124,25 @@ export function CartDrawer() {
   const { panel, closePanel } = useUI();
   const { cart } = useShop();
   const { count, subtotal } = cartTotals(cart);
+  const t = useT().chrome;
 
   return (
-    <Overlay open={panel === "cart"} onClose={closePanel} label="Səbət" side="right" hideClose>
+    <Overlay open={panel === "cart"} onClose={closePanel} label={t.cart.title} side="right" hideClose>
       <div className="flex items-center justify-between border-b border-line px-6 py-5">
         <h2 className="t-h3">
-          Səbət <span className="text-base font-normal text-muted">({count})</span>
+          {t.cart.title} <span className="text-base font-normal text-muted">({count})</span>
         </h2>
         <button type="button" onClick={closePanel} className="link-u text-sm">
-          Bağla
+          {t.close}
         </button>
       </div>
 
       {cart.length === 0 ? (
         <div className="flex flex-1 flex-col items-start justify-center px-6 pb-16">
-          <p className="t-h2">Səbətiniz boşdur</p>
-          <p className="mt-3 max-w-[32ch] text-muted">Bəyəndiyiniz məhsulu səbətə əlavə edin, o burada görünəcək.</p>
+          <p className="t-h2">{t.cart.emptyTitle}</p>
+          <p className="mt-3 max-w-[32ch] text-muted">{t.cart.emptyText}</p>
           <Link href="/kataloq" onClick={closePanel} className="btn btn-primary mt-7">
-            Kataloqa keç
+            {t.cart.toCatalog}
           </Link>
         </div>
       ) : (
@@ -146,16 +153,16 @@ export function CartDrawer() {
           <div className="border-t border-line bg-linen/60 px-6 py-5">
             <DeliveryProgress subtotal={subtotal} />
             <div className="mt-5 flex items-baseline justify-between">
-              <span>Ara cəm</span>
+              <span>{t.cart.subtotal}</span>
               <span className="text-xl font-medium">{formatAZN(subtotal)}</span>
             </div>
-            <p className="t-small mt-1 text-muted">Çatdırılma haqqı ödəniş mərhələsində hesablanır.</p>
+            <p className="t-small mt-1 text-muted">{t.cart.shippingNote}</p>
             <div className="mt-4 grid gap-2.5">
               <Link href="/odenis" onClick={closePanel} className="btn btn-primary">
-                Sifarişi rəsmiləşdir
+                {t.cart.checkout}
               </Link>
               <Link href="/sebet" onClick={closePanel} className="btn btn-ghost">
-                Səbətə bax
+                {t.cart.viewCart}
               </Link>
             </div>
           </div>
